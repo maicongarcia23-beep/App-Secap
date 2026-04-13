@@ -2384,6 +2384,31 @@ export default function App() {
     setSolicitacoesCadastro((p) => withTenant(p));
     setSolicitacoesSenha((p) => withTenant(p));
   }, []);
+  useEffect(() => {
+    setPerfis((prev) => {
+      const hasMaster = (prev || []).some((p) => p.nome === "Master");
+      if (hasMaster) return prev;
+      return [{ id:99, nome:"Master", nivel:0, permissoes:allPerms() }, ...(prev || [])];
+    });
+    setUsuarios((prev) => {
+      const list = prev || [];
+      const byEmail = list.some((u) => (u.email || "").trim().toLowerCase() === "master@secap.com.br");
+      if (byEmail) {
+        return list.map((u) => ((u.email || "").trim().toLowerCase() === "master@secap.com.br" ? { ...u, perfil:"Master", ativo:true, tenantId:null } : u));
+      }
+      return [{
+        id:100,
+        tenantId:null,
+        igrejaId:null,
+        nome:"Master SECAP",
+        email:"master@secap.com.br",
+        senha:"123456",
+        perfil:"Master",
+        ministerio:"—",
+        ativo:true
+      }, ...list];
+    });
+  }, []);
   useEffect(()=>{
     if(!authUserId) return;
     const u = usuarios.find(x=>x.id===authUserId);
