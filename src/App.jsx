@@ -133,6 +133,7 @@ const USUARIOS_INIT = [
   {id:4,igrejaId:2,nome:"Ricardo Alves",email:"ricardo@email.com",senha:"123456",perfil:"Lider",ministerio:"Intercessão",ativo:true},
   {id:5,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",senha:"123456",perfil:"Secretaria",ministerio:"—",ativo:true},
 ];
+const SOLICITACOES_CADASTRO_INIT = [];
 const FUNCIONALIDADES = [
   { key:"dashboard", label:"Dashboard", grupo:"Visão geral" },
   { key:"igrejas", label:"Igrejas", grupo:"Cadastros" },
@@ -279,9 +280,15 @@ function RowActions({ onView, onEdit, onDelete }) {
   );
 }
 
-function LoginScreen({ onLoginError, onLogin, loading }) {
+function LoginScreen({ onLoginError, onLogin, onRequestRegistration, igrejas, loading }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [cadastroOpen, setCadastroOpen] = useState(false);
+  const [cadNome, setCadNome] = useState("");
+  const [cadEmail, setCadEmail] = useState("");
+  const [cadSenha, setCadSenha] = useState("");
+  const [cadIgrejaId, setCadIgrejaId] = useState("");
+  const [cadMsg, setCadMsg] = useState("");
   return (
     <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:C.pageBg,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
       <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
@@ -295,8 +302,39 @@ function LoginScreen({ onLoginError, onLogin, loading }) {
           <Inp label="Senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••" />
           {onLoginError && <div style={{ fontSize:12,color:C.red,background:"#fff4f4",border:`1px solid #f2cccc`,borderRadius:8,padding:"8px 10px" }}>{onLoginError}</div>}
           <Btn disabled={loading} onClick={()=>onLogin(email, senha)}>{loading ? "Entrando..." : "Entrar"}</Btn>
+          <Btn variant="secondary" onClick={()=>setCadastroOpen(true)}>Solicitar cadastro</Btn>
         </div>
       </div>
+      {cadastroOpen && <Modal title="Solicitar cadastro de membro" onClose={()=>setCadastroOpen(false)}>
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          <Inp label="Nome completo *" value={cadNome} onChange={e=>setCadNome(e.target.value)} />
+          <Inp label="E-mail *" value={cadEmail} onChange={e=>setCadEmail(e.target.value)} />
+          <Inp label="Senha desejada *" type="password" value={cadSenha} onChange={e=>setCadSenha(e.target.value)} />
+          <Slct label="Igreja *" value={cadIgrejaId} onChange={e=>setCadIgrejaId(e.target.value)}>
+            <option value="">— Selecione —</option>
+            {igrejas.map(ig=><option key={ig.id} value={ig.id}>{ig.nome}</option>)}
+          </Slct>
+          {cadMsg && <div style={{ fontSize:12,color:C.textMed,background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px" }}>{cadMsg}</div>}
+          <div style={{ display:"flex",justifyContent:"flex-end",gap:8 }}>
+            <Btn variant="secondary" onClick={()=>setCadastroOpen(false)}>Cancelar</Btn>
+            <Btn onClick={()=>{
+              const r = onRequestRegistration({
+                nome: cadNome,
+                email: cadEmail,
+                senha: cadSenha,
+                igrejaId: cadIgrejaId ? parseInt(cadIgrejaId) : null
+              });
+              setCadMsg(r.msg);
+              if(r.ok){
+                setCadNome("");
+                setCadEmail("");
+                setCadSenha("");
+                setCadIgrejaId("");
+              }
+            }}>Enviar solicitação</Btn>
+          </div>
+        </div>
+      </Modal>}
     </div>
   );
 }
@@ -1296,7 +1334,7 @@ function CargoForm({ data, onSave, onClose }) {
 }
 
 // --- ACESSO --------------------------------------------------------------------
-function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis }) {
+function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro }) {
   const [modal,setModal]=useState(null);
   const [perfilModal,setPerfilModal]=useState(null);
   const EMPTY={nome:"",email:"",senha:"123456",perfil:perfis[0]?.nome||"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
@@ -1361,6 +1399,48 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
             </div>;
           })}
         </div>
+      </Card>
+      <Card style={{ padding:12 }}>
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
+          <h3 style={{ color:C.textDark,fontSize:13,fontWeight:700,margin:0 }}>Solicitações de cadastro</h3>
+          <span style={{ fontSize:11,color:C.textLight }}>{solicitacoesCadastro.length} pendente(s)</span>
+        </div>
+        {solicitacoesCadastro.length===0 ? (
+          <div style={{ fontSize:12,color:C.textLight }}>Nenhuma solicitação pendente.</div>
+        ) : (
+          <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
+            {solicitacoesCadastro.map(s=>{
+              const ig = igrejas.find(x=>x.id===s.igrejaId);
+              return <div key={s.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10 }}>
+                <Avatar nome={s.nome} size="sm" />
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:13,color:C.textDark,fontWeight:700 }}>{s.nome}</div>
+                  <div style={{ fontSize:11,color:C.textLight }}>{s.email}{ig?` · ${ig.nome}`:""} · {formatDate(s.data)}</div>
+                </div>
+                <Btn variant="secondary" style={{ padding:"5px 8px",fontSize:11 }} onClick={()=>{
+                  const existe = usuarios.some(u=>(u.email||"").toLowerCase()===(s.email||"").toLowerCase());
+                  if(existe){
+                    alert("Já existe usuário com este e-mail.");
+                    setSolicitacoesCadastro(prev=>prev.filter(x=>x.id!==s.id));
+                    return;
+                  }
+                  setUsuarios(prev=>[...prev,{
+                    id:Date.now(),
+                    nome:s.nome,
+                    email:s.email,
+                    senha:s.senha,
+                    perfil:"Membro",
+                    ministerio:"",
+                    igrejaId:s.igrejaId ?? null,
+                    ativo:true
+                  }]);
+                  setSolicitacoesCadastro(prev=>prev.filter(x=>x.id!==s.id));
+                }}>Aprovar</Btn>
+                <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={()=>setSolicitacoesCadastro(prev=>prev.filter(x=>x.id!==s.id))}>Reprovar</Btn>
+              </div>;
+            })}
+          </div>
+        )}
       </Card>
       <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
         {usuarios.map(u=>{
@@ -1922,6 +2002,7 @@ export default function App() {
   const [templatesContato,setTemplatesContato]=usePersistentState("secap_templates_contato", {});
   const [ministerios,setMinisterios]=usePersistentState("secap_ministerios", MINISTERIOS_INIT);
   const [usuarios,setUsuarios]=usePersistentState("secap_usuarios", USUARIOS_INIT);
+  const [solicitacoesCadastro,setSolicitacoesCadastro]=usePersistentState("secap_solicitacoes_cadastro", SOLICITACOES_CADASTRO_INIT);
   const [perfis,setPerfis]=usePersistentState("secap_perfis", PERFIS_INIT);
   const [cargos,setCargos]=usePersistentState("secap_cargos", CARGOS_INIT);
   const [perfilAtualNome,setPerfilAtualNome]=usePersistentState("secap_perfil_atual", "Admin");
@@ -2005,6 +2086,7 @@ export default function App() {
           if ("templatesContato" in st) setTemplatesContato(st.templatesContato || {});
           if ("ministerios" in st) setMinisterios(st.ministerios || MINISTERIOS_INIT);
           if ("usuarios" in st) setUsuarios(st.usuarios || USUARIOS_INIT);
+          if ("solicitacoesCadastro" in st) setSolicitacoesCadastro(st.solicitacoesCadastro || SOLICITACOES_CADASTRO_INIT);
           if ("perfis" in st) setPerfis(st.perfis || PERFIS_INIT);
           if ("cargos" in st) setCargos(st.cargos || CARGOS_INIT);
           if ("perfilAtualNome" in st) setPerfilAtualNome(st.perfilAtualNome || "Admin");
@@ -2022,7 +2104,7 @@ export default function App() {
   useEffect(() => {
     if (isHydratingRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    const snapshot = { igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, perfis, cargos, perfilAtualNome, membroAtualId };
+    const snapshot = { igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId };
     saveTimerRef.current = setTimeout(async () => {
       try {
         setSyncStatus("salvando");
@@ -2033,7 +2115,7 @@ export default function App() {
       }
     }, 700);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, perfis, cargos, perfilAtualNome, membroAtualId]);
+  }, [igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId]);
 
   const renderPage = () => {
     if (pagina==="dashboard") {
@@ -2047,14 +2129,14 @@ export default function App() {
     if (pagina==="comunicacao") return <Comunicacao comunicados={comunicados} setComunicados={setComunicados} pedidosOracao={pedidosOracao} setPedidosOracao={setPedidosOracao} igrejas={igrejas} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
     if (pagina==="ministerios") return <Ministerios ministerios={ministerios} setMinisterios={setMinisterios} membros={membros} igrejas={igrejas} igrejaAtual={igrejaAtual}/>;
     if (pagina==="cargos")      return <Cargos cargos={cargos} setCargos={setCargos} membros={membros}/>;
-    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis}/>;
+    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro}/>;
     if (pagina==="relatorios")  return <Relatorios membros={membros} visitantes={visitantes} ministerios={ministerios} igrejas={igrejas} cargos={cargos} igrejaAtual={igrejaAtual} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao}/>;
     return null;
   };
   const exportarBackup = () => {
     const payload = {
       meta:{ app:"SECAP", version:"2.0", exportedAt:new Date().toISOString() },
-      igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, perfis, cargos, perfilAtualNome, membroAtualId
+      igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId
     };
     const blob = new Blob([JSON.stringify(payload,null,2)], { type:"application/json;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -2078,6 +2160,7 @@ export default function App() {
     setTemplatesContato({});
     setMinisterios(MINISTERIOS_INIT);
     setUsuarios(USUARIOS_INIT);
+    setSolicitacoesCadastro(SOLICITACOES_CADASTRO_INIT);
     setPerfis(PERFIS_INIT);
     setCargos(CARGOS_INIT);
     setPerfilAtualNome("Admin");
@@ -2127,9 +2210,33 @@ export default function App() {
     setAuthUserId(null);
     setLoginError("");
   };
+  const requestRegistration = ({ nome, email, senha, igrejaId }) => {
+    const nm = (nome || "").trim();
+    const em = (email || "").trim().toLowerCase();
+    const pw = (senha || "").trim();
+    if(!nm || !em || !pw || !igrejaId){
+      return { ok:false, msg:"Preencha todos os campos obrigatórios." };
+    }
+    if(usuarios.some(u=>(u.email||"").trim().toLowerCase()===em)){
+      return { ok:false, msg:"Já existe usuário com este e-mail." };
+    }
+    if(solicitacoesCadastro.some(s=>(s.email||"").trim().toLowerCase()===em)){
+      return { ok:false, msg:"Já existe solicitação pendente para este e-mail." };
+    }
+    setSolicitacoesCadastro(prev=>[...prev,{
+      id:Date.now(),
+      nome:nm,
+      email:em,
+      senha:pw,
+      igrejaId,
+      data:new Date().toISOString().slice(0,10),
+      status:"Pendente"
+    }]);
+    return { ok:true, msg:"Solicitação enviada. Aguarde aprovação de um administrador." };
+  };
 
   if(!usuarioLogado){
-    return <LoginScreen onLogin={doLogin} onLoginError={loginError} loading={loginLoading} />;
+    return <LoginScreen onLogin={doLogin} onLoginError={loginError} onRequestRegistration={requestRegistration} igrejas={igrejas} loading={loginLoading} />;
   }
 
   return (

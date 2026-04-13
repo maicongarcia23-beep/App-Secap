@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-13T12:13:56.096Z",
+  "updatedAt": "2026-04-13T14:27:47.006Z",
   "state": {
     "igrejaAtual": null,
     "igrejas": [
@@ -465,6 +465,7 @@
         "ativo": true
       }
     ],
+    "solicitacoesCadastro": [],
     "perfis": [
       {
         "id": 1,
