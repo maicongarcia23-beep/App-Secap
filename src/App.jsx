@@ -127,11 +127,11 @@ const PEDIDOS_ORACAO_INIT = [
   {id:2,igrejaId:2,nome:"Leandro Pinto",origem:"Visitante",pedido:"Saúde da família",status:"Em acompanhamento",responsavel:"Ricardo Alves",data:"2026-04-08"},
 ];
 const USUARIOS_INIT = [
-  {id:1,igrejaId:null,nome:"Pastor João Carlos",email:"pastor@secap.com.br",perfil:"Admin",ministerio:"—",ativo:true},
-  {id:2,igrejaId:1,nome:"Ana Lima",email:"ana@email.com",perfil:"Lider",ministerio:"Louvor e Adoração",ativo:true},
-  {id:3,igrejaId:1,nome:"Carla Souza",email:"carla@email.com",perfil:"Lider",ministerio:"Infantil",ativo:true},
-  {id:4,igrejaId:2,nome:"Ricardo Alves",email:"ricardo@email.com",perfil:"Lider",ministerio:"Intercessão",ativo:true},
-  {id:5,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",perfil:"Secretaria",ministerio:"—",ativo:true},
+  {id:1,igrejaId:null,nome:"Pastor João Carlos",email:"pastor@secap.com.br",senha:"123456",perfil:"Admin",ministerio:"—",ativo:true},
+  {id:2,igrejaId:1,nome:"Ana Lima",email:"ana@email.com",senha:"123456",perfil:"Lider",ministerio:"Louvor e Adoração",ativo:true},
+  {id:3,igrejaId:1,nome:"Carla Souza",email:"carla@email.com",senha:"123456",perfil:"Lider",ministerio:"Infantil",ativo:true},
+  {id:4,igrejaId:2,nome:"Ricardo Alves",email:"ricardo@email.com",senha:"123456",perfil:"Lider",ministerio:"Intercessão",ativo:true},
+  {id:5,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",senha:"123456",perfil:"Secretaria",ministerio:"—",ativo:true},
 ];
 const FUNCIONALIDADES = [
   { key:"dashboard", label:"Dashboard", grupo:"Visão geral" },
@@ -275,6 +275,28 @@ function RowActions({ onView, onEdit, onDelete }) {
       {onView&&<button onClick={onView} style={{ background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"4px 6px",color:C.textLight }}>Ver</button>}
       <button onClick={onEdit} style={{ background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"4px 6px",color:C.textLight }}>Editar</button>
       <button onClick={onDelete} style={{ background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"4px 6px",color:C.textLight }}>Excluir</button>
+    </div>
+  );
+}
+
+function LoginScreen({ onLoginError, onLogin, loading }) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  return (
+    <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:C.pageBg,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
+      <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
+        <div style={{ display:"flex",justifyContent:"center",marginBottom:10 }}>
+          <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",borderRadius:8,background:C.oliva,padding:6 }} />
+        </div>
+        <h1 style={{ margin:"0 0 4px",fontSize:22,color:C.textDark,textAlign:"center",fontWeight:800 }}>Acesso ao Sistema</h1>
+        <p style={{ margin:"0 0 16px",fontSize:13,color:C.textLight,textAlign:"center" }}>Entre com seu e-mail e senha</p>
+        <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+          <Inp label="E-mail" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" />
+          <Inp label="Senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••" />
+          {onLoginError && <div style={{ fontSize:12,color:C.red,background:"#fff4f4",border:`1px solid #f2cccc`,borderRadius:8,padding:"8px 10px" }}>{onLoginError}</div>}
+          <Btn disabled={loading} onClick={()=>onLogin(email, senha)}>{loading ? "Entrando..." : "Entrar"}</Btn>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1277,7 +1299,7 @@ function CargoForm({ data, onSave, onClose }) {
 function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis }) {
   const [modal,setModal]=useState(null);
   const [perfilModal,setPerfilModal]=useState(null);
-  const EMPTY={nome:"",email:"",perfil:perfis[0]?.nome||"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
+  const EMPTY={nome:"",email:"",senha:"123456",perfil:perfis[0]?.nome||"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
   const EMPTY_PERFIL={nome:"",nivel:5,permissoes:pickPerms(["dashboard"])};
   const perfilMap=useMemo(()=>new Map(perfis.map(p=>[p.nome,p])),[perfis]);
   const perfilPillStyle=(nome)=>{
@@ -1369,12 +1391,13 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
         <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
           <Inp label="Nome *" value={modal.data.nome} onChange={e=>setModal(p=>({...p,data:{...p.data,nome:e.target.value}}))}/>
           <Inp label="E-mail *" value={modal.data.email} onChange={e=>setModal(p=>({...p,data:{...p.data,email:e.target.value}}))}/>
+          <Inp label="Senha *" type="password" value={modal.data.senha||""} onChange={e=>setModal(p=>({...p,data:{...p.data,senha:e.target.value}}))}/>
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
             <Slct label="Perfil" value={modal.data.perfil} onChange={e=>setModal(p=>({...p,data:{...p.data,perfil:e.target.value}}))}>{perfis.map(x=><option key={x.id} value={x.nome}>{x.nome}</option>)}</Slct>
             <Slct label="Igreja" value={modal.data.igrejaId??""} onChange={e=>setModal(p=>({...p,data:{...p.data,igrejaId:e.target.value?parseInt(e.target.value):null}}))}><option value="">— Todas —</option>{igrejas.map(ig=><option key={ig.id} value={ig.id}>{ig.nome}</option>)}</Slct>
           </div>
           <Slct label="Ministério" value={modal.data.ministerio} onChange={e=>setModal(p=>({...p,data:{...p.data,ministerio:e.target.value}}))}><option value="">— Nenhum —</option>{ministerios.filter(m=>!modal.data.igrejaId||m.igrejaId===parseInt(modal.data.igrejaId)).map(m=><option key={m.id}>{m.nome}</option>)}</Slct>
-          <div style={{ display:"flex",justifyContent:"flex-end",gap:8,paddingTop:8 }}><Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn><Btn onClick={()=>{ if(!modal.data.nome||!modal.data.email) return alert("Nome e e-mail obrigatórios"); save(modal.data); }}>Salvar</Btn></div>
+          <div style={{ display:"flex",justifyContent:"flex-end",gap:8,paddingTop:8 }}><Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn><Btn onClick={()=>{ if(!modal.data.nome||!modal.data.email||!modal.data.senha) return alert("Nome, e-mail e senha são obrigatórios"); save(modal.data); }}>Salvar</Btn></div>
         </div>
       </Modal>}
       {perfilModal && <Modal title={perfilModal.mode==="new"?"Novo Perfil":"Editar Perfil"} onClose={()=>setPerfilModal(null)}>
@@ -1903,6 +1926,9 @@ export default function App() {
   const [cargos,setCargos]=usePersistentState("secap_cargos", CARGOS_INIT);
   const [perfilAtualNome,setPerfilAtualNome]=usePersistentState("secap_perfil_atual", "Admin");
   const [membroAtualId,setMembroAtualId]=usePersistentState("secap_membro_atual_id", null);
+  const [authUserId,setAuthUserId]=usePersistentState("secap_auth_user_id", null);
+  const [loginError,setLoginError]=useState("");
+  const [loginLoading,setLoginLoading]=useState(false);
   const [syncStatus,setSyncStatus]=useState("local");
   const isHydratingRef = useRef(true);
   const saveTimerRef = useRef(null);
@@ -1914,6 +1940,10 @@ export default function App() {
   const membroAtual = useMemo(
     ()=>membros.find(m=>m.id===membroAtualId) || membrosAtivosContexto[0] || null,
     [membros,membroAtualId,membrosAtivosContexto]
+  );
+  const usuarioLogado = useMemo(
+    ()=>usuarios.find(u=>u.id===authUserId && u.ativo) || null,
+    [usuarios,authUserId]
   );
   const pageToPerm = {
     dashboard:"dashboard",
@@ -1940,6 +1970,22 @@ export default function App() {
     if(perfilAtualNome==="Membro" && !membroAtualId && membrosAtivosContexto[0]) setMembroAtualId(membrosAtivosContexto[0].id);
     if(perfilAtualNome==="Membro" && membroAtualId && !membros.some(m=>m.id===membroAtualId&&m.status==="Ativo")) setMembroAtualId(membrosAtivosContexto[0]?.id||null);
   }, [perfilAtualNome,membroAtualId,membros,membrosAtivosContexto]);
+  useEffect(()=>{
+    if(!authUserId) return;
+    const u = usuarios.find(x=>x.id===authUserId);
+    if(!u || !u.ativo){
+      setAuthUserId(null);
+      setLoginError("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+    if(u.perfil !== perfilAtualNome) setPerfilAtualNome(u.perfil);
+    if(u.igrejaId!==undefined && u.igrejaId!==igrejaAtual) setIgrejaAtual(u.igrejaId ?? null);
+    if(u.perfil==="Membro"){
+      const alvo = membros.find(m=>m.status==="Ativo" && (m.email||"").toLowerCase()===(u.email||"").toLowerCase())
+        || membros.find(m=>m.status==="Ativo" && m.nome===u.nome);
+      if(alvo && alvo.id!==membroAtualId) setMembroAtualId(alvo.id);
+    }
+  }, [authUserId, usuarios, perfilAtualNome, igrejaAtual, membroAtualId, membros]);
   useEffect(() => {
     let active = true;
     (async () => {
@@ -2036,6 +2082,7 @@ export default function App() {
     setCargos(CARGOS_INIT);
     setPerfilAtualNome("Admin");
     setMembroAtualId(null);
+    setAuthUserId(null);
     setPagina("dashboard");
   };
   const syncLabel = {
@@ -2045,6 +2092,45 @@ export default function App() {
     erro:"Erro API",
     local:"Modo local"
   }[syncStatus] || "Modo local";
+  const doLogin = (email, senha) => {
+    const mail = (email || "").trim().toLowerCase();
+    const pass = (senha || "").trim();
+    if(!mail || !pass){
+      setLoginError("Informe e-mail e senha.");
+      return;
+    }
+    setLoginLoading(true);
+    const u = usuarios.find(x=>(x.email||"").trim().toLowerCase()===mail);
+    if(!u || !u.ativo){
+      setLoginError("Usuário não encontrado ou inativo.");
+      setLoginLoading(false);
+      return;
+    }
+    const senhaUsuario = String(u.senha || "123456");
+    if(senhaUsuario !== pass){
+      setLoginError("Senha inválida.");
+      setLoginLoading(false);
+      return;
+    }
+    setPerfilAtualNome(u.perfil || "Membro");
+    setIgrejaAtual(u.igrejaId ?? null);
+    if((u.perfil||"")==="Membro"){
+      const alvo = membros.find(m=>m.status==="Ativo" && (m.email||"").toLowerCase()===(u.email||"").toLowerCase())
+        || membros.find(m=>m.status==="Ativo" && m.nome===u.nome);
+      setMembroAtualId(alvo?.id || null);
+    }
+    setAuthUserId(u.id);
+    setLoginError("");
+    setLoginLoading(false);
+  };
+  const doLogout = () => {
+    setAuthUserId(null);
+    setLoginError("");
+  };
+
+  if(!usuarioLogado){
+    return <LoginScreen onLogin={doLogin} onLoginError={loginError} loading={loginLoading} />;
+  }
 
   return (
     <div style={{ minHeight:"100vh",background:C.pageBg,color:C.textDark,display:"flex",fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
@@ -2061,13 +2147,10 @@ export default function App() {
               <div style={{ fontSize:10,color:C.oliva,fontWeight:600 }}>{igNome}</div>
               <div style={{ fontSize:9,color:C.textLight }}>{syncLabel}</div>
             </div>
-            <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
-              <select value={perfilAtualNome} onChange={e=>setPerfilAtualNome(e.target.value)} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 6px",fontSize:11,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
-                {perfis.map(p=><option key={p.id} value={p.nome}>{p.nome}</option>)}
-              </select>
-              {perfilAtualNome==="Membro" && <select value={membroAtual?.id||""} onChange={e=>setMembroAtualId(parseInt(e.target.value))} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"4px 6px",fontSize:10,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
-                {membrosAtivosContexto.map(m=><option key={m.id} value={m.id}>{m.nome}</option>)}
-              </select>}
+            <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end" }}>
+              <div style={{ fontSize:11,color:C.textMed,fontWeight:700 }}>{usuarioLogado.nome}</div>
+              <div style={{ fontSize:10,color:C.textLight }}>{perfilAtualNome}</div>
+              <button onClick={doLogout} style={{ background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"3px 7px",fontSize:10,color:C.red,cursor:"pointer" }}>Sair</button>
             </div>
           </header>
           {/* Mobile Content */}
@@ -2087,13 +2170,12 @@ export default function App() {
             <div style={{ display:"flex",alignItems:"center",gap:8 }}>
               <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11 }} onClick={exportarBackup}>Backup</Btn>
               <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={resetarDados}>Reset</Btn>
-              <div style={{ width:30,height:30,borderRadius:"50%",background:C.oliva,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff" }}>P</div>
-              <select value={perfilAtualNome} onChange={e=>setPerfilAtualNome(e.target.value)} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 8px",fontSize:12,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
-                {perfis.map(p=><option key={p.id} value={p.nome}>{p.nome}</option>)}
-              </select>
-              {perfilAtualNome==="Membro" && <select value={membroAtual?.id||""} onChange={e=>setMembroAtualId(parseInt(e.target.value))} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 8px",fontSize:12,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",maxWidth:220 }}>
-                {membrosAtivosContexto.map(m=><option key={m.id} value={m.id}>{m.nome}</option>)}
-              </select>}
+              <div style={{ width:30,height:30,borderRadius:"50%",background:C.oliva,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff" }}>{initials(usuarioLogado.nome||"P")}</div>
+              <div style={{ display:"flex",flexDirection:"column",lineHeight:1.1 }}>
+                <span style={{ fontSize:12,color:C.textMed,fontWeight:700 }}>{usuarioLogado.nome}</span>
+                <span style={{ fontSize:11,color:C.textLight }}>{perfilAtualNome}</span>
+              </div>
+              <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={doLogout}>Sair</Btn>
             </div>
           </header>
           <main style={{ flex:1,padding:"20px 24px",overflowY:"auto" }}>
