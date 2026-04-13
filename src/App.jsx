@@ -126,17 +126,22 @@ const PEDIDOS_ORACAO_INIT = [
   {id:1,igrejaId:1,nome:"Carlos Mendes",origem:"Membro",pedido:"Oração por emprego",status:"Novo",responsavel:"Ana Lima",data:"2026-04-10"},
   {id:2,igrejaId:2,nome:"Leandro Pinto",origem:"Visitante",pedido:"Saúde da família",status:"Em acompanhamento",responsavel:"Ricardo Alves",data:"2026-04-08"},
 ];
+const TENANTS_INIT = [
+  { id:1, nome:"SECAP (Demo)", status:"Ativo", plano:"Piloto", limiteUsuarios:200, contato:"pastor@secap.com.br" }
+];
 const USUARIOS_INIT = [
-  {id:1,igrejaId:null,nome:"Pastor João Carlos",email:"pastor@secap.com.br",senha:"123456",perfil:"Admin",ministerio:"—",ativo:true},
-  {id:2,igrejaId:1,nome:"Ana Lima",email:"ana@email.com",senha:"123456",perfil:"Lider",ministerio:"Louvor e Adoração",ativo:true},
-  {id:3,igrejaId:1,nome:"Carla Souza",email:"carla@email.com",senha:"123456",perfil:"Lider",ministerio:"Infantil",ativo:true},
-  {id:4,igrejaId:2,nome:"Ricardo Alves",email:"ricardo@email.com",senha:"123456",perfil:"Lider",ministerio:"Intercessão",ativo:true},
-  {id:5,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",senha:"123456",perfil:"Secretaria",ministerio:"—",ativo:true},
+  {id:100,tenantId:null,igrejaId:null,nome:"Master SECAP",email:"master@secap.com.br",senha:"123456",perfil:"Master",ministerio:"—",ativo:true},
+  {id:1,tenantId:1,igrejaId:null,nome:"Pastor João Carlos",email:"pastor@secap.com.br",senha:"123456",perfil:"Admin",ministerio:"—",ativo:true},
+  {id:2,tenantId:1,igrejaId:1,nome:"Ana Lima",email:"ana@email.com",senha:"123456",perfil:"Lider",ministerio:"Louvor e Adoração",ativo:true},
+  {id:3,tenantId:1,igrejaId:1,nome:"Carla Souza",email:"carla@email.com",senha:"123456",perfil:"Lider",ministerio:"Infantil",ativo:true},
+  {id:4,tenantId:1,igrejaId:2,nome:"Ricardo Alves",email:"ricardo@email.com",senha:"123456",perfil:"Lider",ministerio:"Intercessão",ativo:true},
+  {id:5,tenantId:1,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",senha:"123456",perfil:"Secretaria",ministerio:"—",ativo:true},
 ];
 const SOLICITACOES_CADASTRO_INIT = [];
 const SOLICITACOES_SENHA_INIT = [];
 const EMAILS_AUTOMATICOS_INIT = [];
 const FUNCIONALIDADES = [
+  { key:"tenants", label:"Clientes", grupo:"Administração SaaS" },
   { key:"dashboard", label:"Dashboard", grupo:"Visão geral" },
   { key:"igrejas", label:"Igrejas", grupo:"Cadastros" },
   { key:"membros", label:"Membros", grupo:"Cadastros" },
@@ -155,7 +160,8 @@ const FUNCIONALIDADES = [
 const allPerms = () => FUNCIONALIDADES.reduce((acc,f)=>({ ...acc, [f.key]:true }),{});
 const pickPerms = (keys) => FUNCIONALIDADES.reduce((acc,f)=>({ ...acc, [f.key]:keys.includes(f.key) }),{});
 const PERFIS_INIT = [
-  { id:1, nome:"Admin", nivel:1, permissoes:allPerms() },
+  { id:99, nome:"Master", nivel:0, permissoes:allPerms() },
+  { id:1, nome:"Admin", nivel:1, permissoes:pickPerms(["dashboard","igrejas","membros","visitantes","ministerios","cargos","eventos","comunicacao","acesso","relatorios","kanbanVisitantes","converterVisitante","editarMinisterio","uploadFotosIgreja"]) },
   { id:2, nome:"Lider", nivel:2, permissoes:pickPerms(["dashboard","igrejas","membros","visitantes","ministerios","eventos","comunicacao","relatorios","kanbanVisitantes","converterVisitante","editarMinisterio","uploadFotosIgreja"]) },
   { id:3, nome:"Secretaria", nivel:3, permissoes:pickPerms(["dashboard","membros","visitantes","ministerios","eventos","comunicacao","relatorios","kanbanVisitantes","converterVisitante","editarMinisterio"]) },
   { id:4, nome:"Membro", nivel:5, permissoes:pickPerms(["dashboard"]) },
@@ -298,7 +304,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
     <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:C.pageBg,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
       <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
         <div style={{ display:"flex",justifyContent:"center",marginBottom:10 }}>
-          <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",borderRadius:8,background:C.oliva,padding:6 }} />
+          <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }} />
         </div>
         <h1 style={{ margin:"0 0 4px",fontSize:22,color:C.textDark,textAlign:"center",fontWeight:800 }}>Acesso ao Sistema</h1>
         <p style={{ margin:"0 0 16px",fontSize:13,color:C.textLight,textAlign:"center" }}>Entre com seu e-mail e senha</p>
@@ -362,6 +368,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
 // --- DRAWER (mobile menu) ------------------------------------------------------
 function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, nav, allowedPages }) {
   const NAV_ALL = [
+    {id:"clientes",icon:"🏢",label:"Clientes"},
     {id:"dashboard",icon:"📊",label:"Dashboard"},
     {id:"igrejas",icon:"🏛️",label:"Igrejas"},
     {id:"membros",icon:"👥",label:"Membros"},
@@ -408,6 +415,7 @@ function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, n
 
 // --- BOTTOM NAV (mobile) -------------------------------------------------------
 const BOTTOM_NAV = [
+  {id:"clientes",icon:"🏢",label:"Clientes"},
   {id:"dashboard",icon:"📊",label:"Início"},
   {id:"membros",icon:"👥",label:"Membros"},
   {id:"visitantes",icon:"🤝",label:"Visitantes"},
@@ -436,6 +444,7 @@ function BottomNav({ pagina, nav, onMaisClick, allowedPages }) {
 
 // --- SIDEBAR (desktop only) ----------------------------------------------------
 const NAV_DESKTOP = [
+  {id:"clientes",icon:"🏢",label:"Clientes"},
   {id:"dashboard",icon:"📊",label:"Dashboard"},
   {id:"igrejas",icon:"🏛️",label:"Igrejas"},
   {id:"membros",icon:"👥",label:"Membros"},
@@ -1357,7 +1366,7 @@ function CargoForm({ data, onSave, onClose }) {
 function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro, solicitacoesSenha, setSolicitacoesSenha, emailsAutomaticos, setEmailsAutomaticos }) {
   const [modal,setModal]=useState(null);
   const [perfilModal,setPerfilModal]=useState(null);
-  const EMPTY={nome:"",email:"",senha:"123456",perfil:perfis[0]?.nome||"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
+  const EMPTY={nome:"",email:"",senha:"123456",perfil:"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
   const EMPTY_PERFIL={nome:"",nivel:5,permissoes:pickPerms(["dashboard"])};
   const perfilMap=useMemo(()=>new Map(perfis.map(p=>[p.nome,p])),[perfis]);
   const perfilPillStyle=(nome)=>{
@@ -1368,7 +1377,7 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
     if(pf.nivel===3) return SP["Secretaria"];
     return SP["Membro"];
   };
-  const save=f=>{ if(modal.mode==="new") setUsuarios(p=>[...p,{...f,id:Date.now()}]); else setUsuarios(p=>p.map(u=>u.id===f.id?f:u)); setModal(null); };
+  const save=f=>{ if(modal.mode==="new") setUsuarios(p=>[...p,{...f,id:Date.now(),tenantId:f.tenantId ?? 1}]); else setUsuarios(p=>p.map(u=>u.id===f.id?{...f,tenantId:f.tenantId ?? u.tenantId ?? 1}:u)); setModal(null); };
   const savePerfil=(f)=>{
     if(!f.nome?.trim()) return alert("Nome do perfil obrigatório");
     const nivel = nivelValido(f.nivel);
@@ -1449,6 +1458,7 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
                     nome:s.nome,
                     email:s.email,
                     senha:s.senha,
+                    tenantId:s.tenantId ?? 1,
                     perfil:"Membro",
                     ministerio:"",
                     igrejaId:s.igrejaId ?? null,
@@ -1762,7 +1772,7 @@ function Eventos({ eventos, setEventos, igrejas, igrejaAtual, membros, visitante
       <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8 }}>
         <StatCard icon="📅" label="Próximos" value={base.filter(e=>e.data>=hojeStr).length} accent={C.oliva}/>
         <StatCard icon="🧾" label="Inscrições" value={totalInscritos} accent={C.olivaMed}/>
-        <StatCard icon="?" label="Presenças" value={base.reduce((a,e)=>a+(e.inscritos||[]).filter(i=>i.presenca).length,0)} accent={C.emerald}/>
+        <StatCard icon="✅" label="Presenças" value={base.reduce((a,e)=>a+(e.inscritos||[]).filter(i=>i.presenca).length,0)} accent={C.emerald}/>
       </div>
       <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
         {base.map(ev=>{
@@ -2069,15 +2079,82 @@ function Relatorios({ membros, visitantes, ministerios, igrejas, cargos, igrejaA
   );
 }
 
+function Clientes({ tenants, setTenants, usuarios }) {
+  const [modal, setModal] = useState(null);
+  const EMPTY = { nome:"", status:"Ativo", plano:"Starter", limiteUsuarios:30, contato:"" };
+  const save = (f) => {
+    if(modal.mode==="new") setTenants(prev=>[...prev, { ...f, id:Date.now() }]);
+    else setTenants(prev=>prev.map(t=>t.id===f.id?f:t));
+    setModal(null);
+  };
+  return (
+    <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:8 }}>
+        <div>
+          <h2 style={{ color:C.textDark,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",fontSize:18,margin:0,fontWeight:700 }}>Clientes</h2>
+          <p style={{ color:C.textLight,fontSize:12,margin:0 }}>{tenants.length} cliente(s) na plataforma</p>
+        </div>
+        <Btn onClick={()=>setModal({ mode:"new", data:{ ...EMPTY } })}>+ Novo cliente</Btn>
+      </div>
+      <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
+        {tenants.map(t=>{
+          const totalUsuarios = usuarios.filter(u=>(u.tenantId ?? 1)===t.id).length;
+          return <Card key={t.id} style={{ padding:"12px 14px",display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ flex:1,minWidth:0 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                <span style={{ fontSize:14,color:C.textDark,fontWeight:700 }}>{t.nome}</span>
+                <Pill label={t.status} styleStr={t.status==="Ativo" ? SI["Ativa"] : SI["Inativa"]} />
+                <Pill label={t.plano} styleStr={SP["Secretaria"]} />
+              </div>
+              <div style={{ marginTop:3,fontSize:11,color:C.textLight }}>Contato: {t.contato || "—"} · Usuários: {totalUsuarios}/{t.limiteUsuarios}</div>
+            </div>
+            <RowActions onEdit={()=>setModal({ mode:"edit", data:{ ...t } })} onDelete={()=>{
+              const emUso = usuarios.some(u=>(u.tenantId ?? 1)===t.id);
+              if(emUso) return alert("Existem usuários vinculados a este cliente.");
+              if(window.confirm(`Remover cliente "${t.nome}"?`)) setTenants(prev=>prev.filter(x=>x.id!==t.id));
+            }} />
+          </Card>;
+        })}
+      </div>
+      {modal && <Modal title={modal.mode==="new" ? "Novo cliente" : "Editar cliente"} onClose={()=>setModal(null)}>
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          <Inp label="Nome *" value={modal.data.nome} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, nome:e.target.value } }))} />
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            <Slct label="Status" value={modal.data.status} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, status:e.target.value } }))}>
+              <option>Ativo</option>
+              <option>Inativo</option>
+            </Slct>
+            <Slct label="Plano" value={modal.data.plano} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, plano:e.target.value } }))}>
+              <option>Starter</option>
+              <option>Growth</option>
+              <option>Pro</option>
+            </Slct>
+          </div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            <Inp label="Limite de usuários" type="number" min={1} value={modal.data.limiteUsuarios} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, limiteUsuarios:parseInt(e.target.value||"1") } }))} />
+            <Inp label="Contato" value={modal.data.contato} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, contato:e.target.value } }))} />
+          </div>
+          <div style={{ display:"flex",justifyContent:"flex-end",gap:8,paddingTop:8 }}>
+            <Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn>
+            <Btn onClick={()=>{ if(!modal.data.nome?.trim()) return alert("Nome obrigatório"); save(modal.data); }}>Salvar</Btn>
+          </div>
+        </div>
+      </Modal>}
+    </div>
+  );
+}
+
 // --- APP ROOT ------------------------------------------------------------------
-const PAGE_LABELS = { dashboard:"Dashboard",igrejas:"Igrejas",membros:"Membros",visitantes:"Visitantes",ministerios:"Ministérios",eventos:"Eventos",comunicacao:"Comunicação",cargos:"Cargos",acesso:"Acesso",relatorios:"Relatórios" };
-const PAGE_ICONS = { dashboard:"📊",igrejas:"🏛️",membros:"👥",visitantes:"🤝",ministerios:"⛪",eventos:"📅",comunicacao:"📣",cargos:"🎖️",acesso:"🔐",relatorios:"📋" };
+const PAGE_LABELS = { clientes:"Clientes",dashboard:"Dashboard",igrejas:"Igrejas",membros:"Membros",visitantes:"Visitantes",ministerios:"Ministérios",eventos:"Eventos",comunicacao:"Comunicação",cargos:"Cargos",acesso:"Acesso",relatorios:"Relatórios" };
+const PAGE_ICONS = { clientes:"🏢",dashboard:"📊",igrejas:"🏛️",membros:"👥",visitantes:"🤝",ministerios:"⛪",eventos:"📅",comunicacao:"📣",cargos:"🎖️",acesso:"🔐",relatorios:"📋" };
 
 export default function App() {
   const isMobile = useIsMobile();
   const [pagina,setPagina]=useState("dashboard");
   const [drawerOpen,setDrawerOpen]=useState(false);
   const [igrejaAtual,setIgrejaAtual]=usePersistentState("secap_igreja_atual", null);
+  const [tenantAtualId,setTenantAtualId]=usePersistentState("secap_tenant_atual", 1);
+  const [tenants,setTenants]=usePersistentState("secap_tenants", TENANTS_INIT);
   const [igrejas,setIgrejas]=usePersistentState("secap_igrejas", IGREJAS_INIT);
   const [membros,setMembros]=usePersistentState("secap_membros", MEMBROS_INIT);
   const [visitantes,setVisitantes]=usePersistentState("secap_visitantes", VISITANTES_INIT);
@@ -2113,7 +2190,12 @@ export default function App() {
     ()=>usuarios.find(u=>u.id===authUserId && u.ativo) || null,
     [usuarios,authUserId]
   );
+  const tenantAtual = useMemo(
+    ()=>tenants.find(t=>t.id===tenantAtualId) || tenants[0] || null,
+    [tenants,tenantAtualId]
+  );
   const pageToPerm = {
+    clientes:"tenants",
     dashboard:"dashboard",
     igrejas:"igrejas",
     membros:"membros",
@@ -2147,13 +2229,24 @@ export default function App() {
       return;
     }
     if(u.perfil !== perfilAtualNome) setPerfilAtualNome(u.perfil);
+    if((u.tenantId ?? 1)!==tenantAtualId) setTenantAtualId(u.tenantId ?? 1);
     if(u.igrejaId!==undefined && u.igrejaId!==igrejaAtual) setIgrejaAtual(u.igrejaId ?? null);
     if(u.perfil==="Membro"){
       const alvo = membros.find(m=>m.status==="Ativo" && (m.email||"").toLowerCase()===(u.email||"").toLowerCase())
         || membros.find(m=>m.status==="Ativo" && m.nome===u.nome);
       if(alvo && alvo.id!==membroAtualId) setMembroAtualId(alvo.id);
     }
-  }, [authUserId, usuarios, perfilAtualNome, igrejaAtual, membroAtualId, membros]);
+  }, [authUserId, usuarios, perfilAtualNome, igrejaAtual, membroAtualId, membros, tenantAtualId]);
+  useEffect(()=>{
+    if(!usuarioLogado) return;
+    if(usuarioLogado.perfil==="Master") return;
+    const t = tenants.find(x=>x.id===(usuarioLogado.tenantId ?? 1));
+    if(!t || t.status!=="Ativo"){
+      setLoginError("Conta da igreja inativa. Fale com o administrador da plataforma.");
+      setAuthUserId(null);
+    }
+  }, [usuarioLogado, tenants]);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -2163,6 +2256,8 @@ export default function App() {
         if (!active) return;
         const st = remote?.state;
         if (st && typeof st === "object") {
+          if ("tenantAtualId" in st) setTenantAtualId(st.tenantAtualId ?? 1);
+          if ("tenants" in st) setTenants(st.tenants || TENANTS_INIT);
           if ("igrejaAtual" in st) setIgrejaAtual(st.igrejaAtual);
           if ("igrejas" in st) setIgrejas(st.igrejas || IGREJAS_INIT);
           if ("membros" in st) setMembros(st.membros || MEMBROS_INIT);
@@ -2178,7 +2273,7 @@ export default function App() {
           if ("emailsAutomaticos" in st) setEmailsAutomaticos(st.emailsAutomaticos || EMAILS_AUTOMATICOS_INIT);
           if ("perfis" in st) setPerfis(st.perfis || PERFIS_INIT);
           if ("cargos" in st) setCargos(st.cargos || CARGOS_INIT);
-          if ("perfilAtualNome" in st) setPerfilAtualNome(st.perfilAtualNome || "Admin");
+          if ("perfilAtualNome" in st) setPerfilAtualNome(st.perfilAtualNome || "Master");
           if ("membroAtualId" in st) setMembroAtualId(st.membroAtualId ?? null);
         }
         setSyncStatus("online");
@@ -2193,7 +2288,7 @@ export default function App() {
   useEffect(() => {
     if (isHydratingRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    const snapshot = { igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId };
+    const snapshot = { tenantAtualId, tenants, igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId };
     saveTimerRef.current = setTimeout(async () => {
       try {
         setSyncStatus("salvando");
@@ -2204,9 +2299,10 @@ export default function App() {
       }
     }, 700);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId]);
+  }, [tenantAtualId, tenants, igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId]);
 
   const renderPage = () => {
+    if (pagina==="clientes")    return <Clientes tenants={tenants} setTenants={setTenants} usuarios={usuarios}/>;
     if (pagina==="dashboard") {
       if(perfilAtualNome==="Membro") return <MembroInicio igrejaAtual={igrejaAtual} igrejas={igrejas} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao} membroAtual={membroAtual} setEventos={setEventos} setPedidosOracao={setPedidosOracao}/>;
       return <Dashboard igrejas={igrejas} membros={membros} visitantes={visitantes} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
@@ -2224,8 +2320,8 @@ export default function App() {
   };
   const exportarBackup = () => {
     const payload = {
-      meta:{ app:"SECAP", version:"2.0", exportedAt:new Date().toISOString() },
-      igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId
+      meta:{ app:"SECAP", version:"2.1", exportedAt:new Date().toISOString() },
+      tenantAtualId, tenants, igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId
     };
     const blob = new Blob([JSON.stringify(payload,null,2)], { type:"application/json;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -2239,6 +2335,8 @@ export default function App() {
   };
   const resetarDados = () => {
     if(!window.confirm("Deseja resetar todos os dados do sistema local?")) return;
+    setTenantAtualId(1);
+    setTenants(TENANTS_INIT);
     setIgrejaAtual(null);
     setIgrejas(IGREJAS_INIT);
     setMembros(MEMBROS_INIT);
@@ -2254,7 +2352,7 @@ export default function App() {
     setEmailsAutomaticos(EMAILS_AUTOMATICOS_INIT);
     setPerfis(PERFIS_INIT);
     setCargos(CARGOS_INIT);
-    setPerfilAtualNome("Admin");
+    setPerfilAtualNome("Master");
     setMembroAtualId(null);
     setAuthUserId(null);
     setPagina("dashboard");
@@ -2287,6 +2385,7 @@ export default function App() {
       return;
     }
     setPerfilAtualNome(u.perfil || "Membro");
+    setTenantAtualId(u.tenantId ?? 1);
     setIgrejaAtual(u.igrejaId ?? null);
     if((u.perfil||"")==="Membro"){
       const alvo = membros.find(m=>m.status==="Ativo" && (m.email||"").toLowerCase()===(u.email||"").toLowerCase())
@@ -2319,6 +2418,7 @@ export default function App() {
       nome:nm,
       email:em,
       senha:pw,
+      tenantId: tenantAtualId ?? 1,
       igrejaId,
       data:new Date().toISOString().slice(0,10),
       status:"Pendente"
@@ -2356,12 +2456,15 @@ export default function App() {
             <button onClick={()=>setDrawerOpen(true)} style={{ background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"2px 6px",color:C.oliva }}>?</button>
             <div style={{ textAlign:"center" }}>
               <div style={{ fontSize:13,fontWeight:700,color:C.textDark }}>{PAGE_ICONS[pagina]} {PAGE_LABELS[pagina]}</div>
-              <div style={{ fontSize:10,color:C.oliva,fontWeight:600 }}>{igNome}</div>
+              <div style={{ fontSize:10,color:C.oliva,fontWeight:600 }}>{perfilAtualNome==="Master" ? (tenantAtual?.nome || "Cliente") : igNome}</div>
               <div style={{ fontSize:9,color:C.textLight }}>{syncLabel}</div>
             </div>
             <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end" }}>
               <div style={{ fontSize:11,color:C.textMed,fontWeight:700 }}>{usuarioLogado.nome}</div>
               <div style={{ fontSize:10,color:C.textLight }}>{perfilAtualNome}</div>
+              {perfilAtualNome==="Master" && <select value={tenantAtualId ?? ""} onChange={e=>setTenantAtualId(parseInt(e.target.value||"1"))} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"3px 6px",fontSize:10,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
+                {tenants.map(t=><option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>}
               <button onClick={doLogout} style={{ background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"3px 7px",fontSize:10,color:C.red,cursor:"pointer" }}>Sair</button>
             </div>
           </header>
@@ -2378,10 +2481,13 @@ export default function App() {
         <Sidebar pagina={pagina} nav={nav} igrejas={igrejas} igrejaAtual={igrejaAtual} setIgrejaAtual={setIgrejaAtual} allowedPages={allowedPages}/>
         <div style={{ flex:1,display:"flex",flexDirection:"column",minWidth:0 }}>
           <header style={{ background:"#fff",borderBottom:`1px solid ${C.border}`,padding:"11px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,boxShadow:"0 1px 4px rgba(40,30,10,0.06)" }}>
-            <div style={{ fontSize:12,color:C.textLight }}>{PAGE_ICONS[pagina]} <span style={{ color:C.textMed,fontWeight:600 }}>{PAGE_LABELS[pagina]}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.oliva,fontWeight:600 }}>{igNome}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.textLight }}>{syncLabel}</span></div>
+            <div style={{ fontSize:12,color:C.textLight }}>{PAGE_ICONS[pagina]} <span style={{ color:C.textMed,fontWeight:600 }}>{PAGE_LABELS[pagina]}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.oliva,fontWeight:600 }}>{perfilAtualNome==="Master" ? (tenantAtual?.nome || "Cliente") : igNome}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.textLight }}>{syncLabel}</span></div>
             <div style={{ display:"flex",alignItems:"center",gap:8 }}>
               <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11 }} onClick={exportarBackup}>Backup</Btn>
               <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={resetarDados}>Reset</Btn>
+              {perfilAtualNome==="Master" && <select value={tenantAtualId ?? ""} onChange={e=>setTenantAtualId(parseInt(e.target.value||"1"))} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"5px 8px",fontSize:12,color:C.textMed,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",maxWidth:220 }}>
+                {tenants.map(t=><option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>}
               <div style={{ width:30,height:30,borderRadius:"50%",background:C.oliva,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff" }}>{initials(usuarioLogado.nome||"P")}</div>
               <div style={{ display:"flex",flexDirection:"column",lineHeight:1.1 }}>
                 <span style={{ fontSize:12,color:C.textMed,fontWeight:700 }}>{usuarioLogado.nome}</span>
