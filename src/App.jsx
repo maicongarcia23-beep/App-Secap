@@ -134,6 +134,8 @@ const USUARIOS_INIT = [
   {id:5,igrejaId:null,nome:"Secretária Rosa",email:"rosa@secap.com.br",senha:"123456",perfil:"Secretaria",ministerio:"—",ativo:true},
 ];
 const SOLICITACOES_CADASTRO_INIT = [];
+const SOLICITACOES_SENHA_INIT = [];
+const EMAILS_AUTOMATICOS_INIT = [];
 const FUNCIONALIDADES = [
   { key:"dashboard", label:"Dashboard", grupo:"Visão geral" },
   { key:"igrejas", label:"Igrejas", grupo:"Cadastros" },
@@ -280,15 +282,18 @@ function RowActions({ onView, onEdit, onDelete }) {
   );
 }
 
-function LoginScreen({ onLoginError, onLogin, onRequestRegistration, igrejas, loading }) {
+function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPasswordReset, igrejas, loading }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [cadastroOpen, setCadastroOpen] = useState(false);
+  const [senhaOpen, setSenhaOpen] = useState(false);
   const [cadNome, setCadNome] = useState("");
   const [cadEmail, setCadEmail] = useState("");
   const [cadSenha, setCadSenha] = useState("");
   const [cadIgrejaId, setCadIgrejaId] = useState("");
   const [cadMsg, setCadMsg] = useState("");
+  const [recEmail, setRecEmail] = useState("");
+  const [recMsg, setRecMsg] = useState("");
   return (
     <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:C.pageBg,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
       <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
@@ -303,6 +308,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, igrejas, lo
           {onLoginError && <div style={{ fontSize:12,color:C.red,background:"#fff4f4",border:`1px solid #f2cccc`,borderRadius:8,padding:"8px 10px" }}>{onLoginError}</div>}
           <Btn disabled={loading} onClick={()=>onLogin(email, senha)}>{loading ? "Entrando..." : "Entrar"}</Btn>
           <Btn variant="secondary" onClick={()=>setCadastroOpen(true)}>Solicitar cadastro</Btn>
+          <Btn variant="ghost" onClick={()=>setSenhaOpen(true)}>Esqueci minha senha</Btn>
         </div>
       </div>
       {cadastroOpen && <Modal title="Solicitar cadastro de membro" onClose={()=>setCadastroOpen(false)}>
@@ -332,6 +338,20 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, igrejas, lo
                 setCadIgrejaId("");
               }
             }}>Enviar solicitação</Btn>
+          </div>
+        </div>
+      </Modal>}
+      {senhaOpen && <Modal title="Recuperar senha" onClose={()=>setSenhaOpen(false)}>
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          <Inp label="E-mail cadastrado *" value={recEmail} onChange={e=>setRecEmail(e.target.value)} />
+          {recMsg && <div style={{ fontSize:12,color:C.textMed,background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px" }}>{recMsg}</div>}
+          <div style={{ display:"flex",justifyContent:"flex-end",gap:8 }}>
+            <Btn variant="secondary" onClick={()=>setSenhaOpen(false)}>Fechar</Btn>
+            <Btn onClick={()=>{
+              const r = onRequestPasswordReset(recEmail);
+              setRecMsg(r.msg);
+              if(r.ok) setRecEmail("");
+            }}>Solicitar redefinição</Btn>
           </div>
         </div>
       </Modal>}
@@ -1334,7 +1354,7 @@ function CargoForm({ data, onSave, onClose }) {
 }
 
 // --- ACESSO --------------------------------------------------------------------
-function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro }) {
+function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro, solicitacoesSenha, setSolicitacoesSenha, emailsAutomaticos, setEmailsAutomaticos }) {
   const [modal,setModal]=useState(null);
   const [perfilModal,setPerfilModal]=useState(null);
   const EMPTY={nome:"",email:"",senha:"123456",perfil:perfis[0]?.nome||"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
@@ -1434,11 +1454,76 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
                     igrejaId:s.igrejaId ?? null,
                     ativo:true
                   }]);
+                  setEmailsAutomaticos(prev=>[{
+                    id:Date.now(),
+                    tipo:"Cadastro aprovado",
+                    para:s.email,
+                    assunto:"Cadastro aprovado - SECAP",
+                    corpo:`Olá ${s.nome}, seu cadastro foi aprovado. Acesse o sistema com seu e-mail e senha cadastrados.`,
+                    data:new Date().toISOString().slice(0,10)
+                  }, ...prev].slice(0,100));
                   setSolicitacoesCadastro(prev=>prev.filter(x=>x.id!==s.id));
                 }}>Aprovar</Btn>
                 <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={()=>setSolicitacoesCadastro(prev=>prev.filter(x=>x.id!==s.id))}>Reprovar</Btn>
               </div>;
             })}
+          </div>
+        )}
+      </Card>
+      <Card style={{ padding:12 }}>
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
+          <h3 style={{ color:C.textDark,fontSize:13,fontWeight:700,margin:0 }}>Recuperação de senha</h3>
+          <span style={{ fontSize:11,color:C.textLight }}>{solicitacoesSenha.length} pendente(s)</span>
+        </div>
+        {solicitacoesSenha.length===0 ? (
+          <div style={{ fontSize:12,color:C.textLight }}>Nenhum pedido pendente.</div>
+        ) : (
+          <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
+            {solicitacoesSenha.map(s=>{
+              const u = usuarios.find(x=>(x.email||"").toLowerCase()===(s.email||"").toLowerCase());
+              return <div key={s.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10 }}>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:13,color:C.textDark,fontWeight:700 }}>{u?.nome || "Usuário não encontrado"}</div>
+                  <div style={{ fontSize:11,color:C.textLight }}>{s.email} · {formatDate(s.data)}</div>
+                </div>
+                <Btn variant="secondary" style={{ padding:"5px 8px",fontSize:11 }} onClick={()=>{
+                  if(!u){
+                    alert("Usuário não encontrado. Solicitação removida.");
+                    setSolicitacoesSenha(prev=>prev.filter(x=>x.id!==s.id));
+                    return;
+                  }
+                  const nova = window.prompt(`Nova senha provisória para ${u.nome}:`, "123456");
+                  if(!nova) return;
+                  setUsuarios(prev=>prev.map(x=>x.id===u.id?{...x,senha:nova}:x));
+                  setEmailsAutomaticos(prev=>[{
+                    id:Date.now(),
+                    tipo:"Senha redefinida",
+                    para:s.email,
+                    assunto:"Senha redefinida - SECAP",
+                    corpo:`Olá ${u.nome}, sua senha foi redefinida. Senha provisória: ${nova}. Altere após o login.`,
+                    data:new Date().toISOString().slice(0,10)
+                  }, ...prev].slice(0,100));
+                  setSolicitacoesSenha(prev=>prev.filter(x=>x.id!==s.id));
+                }}>Definir senha</Btn>
+                <Btn variant="ghost" style={{ padding:"5px 8px",fontSize:11,color:C.red }} onClick={()=>setSolicitacoesSenha(prev=>prev.filter(x=>x.id!==s.id))}>Reprovar</Btn>
+              </div>;
+            })}
+          </div>
+        )}
+      </Card>
+      <Card style={{ padding:12 }}>
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
+          <h3 style={{ color:C.textDark,fontSize:13,fontWeight:700,margin:0 }}>E-mails automáticos (histórico)</h3>
+          <span style={{ fontSize:11,color:C.textLight }}>{emailsAutomaticos.length} registro(s)</span>
+        </div>
+        {emailsAutomaticos.length===0 ? (
+          <div style={{ fontSize:12,color:C.textLight }}>Nenhum e-mail registrado ainda.</div>
+        ) : (
+          <div style={{ display:"flex",flexDirection:"column",gap:6,maxHeight:220,overflowY:"auto" }}>
+            {emailsAutomaticos.map(e=><div key={e.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px" }}>
+              <div style={{ fontSize:12,color:C.textDark,fontWeight:700 }}>{e.tipo} · {e.para}</div>
+              <div style={{ fontSize:11,color:C.textLight }}>{e.assunto} · {formatDate(e.data)}</div>
+            </div>)}
           </div>
         )}
       </Card>
@@ -2003,6 +2088,8 @@ export default function App() {
   const [ministerios,setMinisterios]=usePersistentState("secap_ministerios", MINISTERIOS_INIT);
   const [usuarios,setUsuarios]=usePersistentState("secap_usuarios", USUARIOS_INIT);
   const [solicitacoesCadastro,setSolicitacoesCadastro]=usePersistentState("secap_solicitacoes_cadastro", SOLICITACOES_CADASTRO_INIT);
+  const [solicitacoesSenha,setSolicitacoesSenha]=usePersistentState("secap_solicitacoes_senha", SOLICITACOES_SENHA_INIT);
+  const [emailsAutomaticos,setEmailsAutomaticos]=usePersistentState("secap_emails_automaticos", EMAILS_AUTOMATICOS_INIT);
   const [perfis,setPerfis]=usePersistentState("secap_perfis", PERFIS_INIT);
   const [cargos,setCargos]=usePersistentState("secap_cargos", CARGOS_INIT);
   const [perfilAtualNome,setPerfilAtualNome]=usePersistentState("secap_perfil_atual", "Admin");
@@ -2087,6 +2174,8 @@ export default function App() {
           if ("ministerios" in st) setMinisterios(st.ministerios || MINISTERIOS_INIT);
           if ("usuarios" in st) setUsuarios(st.usuarios || USUARIOS_INIT);
           if ("solicitacoesCadastro" in st) setSolicitacoesCadastro(st.solicitacoesCadastro || SOLICITACOES_CADASTRO_INIT);
+          if ("solicitacoesSenha" in st) setSolicitacoesSenha(st.solicitacoesSenha || SOLICITACOES_SENHA_INIT);
+          if ("emailsAutomaticos" in st) setEmailsAutomaticos(st.emailsAutomaticos || EMAILS_AUTOMATICOS_INIT);
           if ("perfis" in st) setPerfis(st.perfis || PERFIS_INIT);
           if ("cargos" in st) setCargos(st.cargos || CARGOS_INIT);
           if ("perfilAtualNome" in st) setPerfilAtualNome(st.perfilAtualNome || "Admin");
@@ -2104,7 +2193,7 @@ export default function App() {
   useEffect(() => {
     if (isHydratingRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    const snapshot = { igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId };
+    const snapshot = { igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId };
     saveTimerRef.current = setTimeout(async () => {
       try {
         setSyncStatus("salvando");
@@ -2115,7 +2204,7 @@ export default function App() {
       }
     }, 700);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId]);
+  }, [igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId]);
 
   const renderPage = () => {
     if (pagina==="dashboard") {
@@ -2129,14 +2218,14 @@ export default function App() {
     if (pagina==="comunicacao") return <Comunicacao comunicados={comunicados} setComunicados={setComunicados} pedidosOracao={pedidosOracao} setPedidosOracao={setPedidosOracao} igrejas={igrejas} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
     if (pagina==="ministerios") return <Ministerios ministerios={ministerios} setMinisterios={setMinisterios} membros={membros} igrejas={igrejas} igrejaAtual={igrejaAtual}/>;
     if (pagina==="cargos")      return <Cargos cargos={cargos} setCargos={setCargos} membros={membros}/>;
-    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro}/>;
+    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro} solicitacoesSenha={solicitacoesSenha} setSolicitacoesSenha={setSolicitacoesSenha} emailsAutomaticos={emailsAutomaticos} setEmailsAutomaticos={setEmailsAutomaticos}/>;
     if (pagina==="relatorios")  return <Relatorios membros={membros} visitantes={visitantes} ministerios={ministerios} igrejas={igrejas} cargos={cargos} igrejaAtual={igrejaAtual} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao}/>;
     return null;
   };
   const exportarBackup = () => {
     const payload = {
       meta:{ app:"SECAP", version:"2.0", exportedAt:new Date().toISOString() },
-      igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, perfis, cargos, perfilAtualNome, membroAtualId
+      igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId
     };
     const blob = new Blob([JSON.stringify(payload,null,2)], { type:"application/json;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -2161,6 +2250,8 @@ export default function App() {
     setMinisterios(MINISTERIOS_INIT);
     setUsuarios(USUARIOS_INIT);
     setSolicitacoesCadastro(SOLICITACOES_CADASTRO_INIT);
+    setSolicitacoesSenha(SOLICITACOES_SENHA_INIT);
+    setEmailsAutomaticos(EMAILS_AUTOMATICOS_INIT);
     setPerfis(PERFIS_INIT);
     setCargos(CARGOS_INIT);
     setPerfilAtualNome("Admin");
@@ -2234,9 +2325,23 @@ export default function App() {
     }]);
     return { ok:true, msg:"Solicitação enviada. Aguarde aprovação de um administrador." };
   };
+  const requestPasswordReset = (email) => {
+    const em = (email || "").trim().toLowerCase();
+    if(!em) return { ok:false, msg:"Informe o e-mail cadastrado." };
+    const u = usuarios.find(x=>(x.email||"").trim().toLowerCase()===em);
+    if(!u) return { ok:false, msg:"E-mail não encontrado na base." };
+    if(solicitacoesSenha.some(s=>(s.email||"").trim().toLowerCase()===em)) return { ok:false, msg:"Já existe solicitação pendente para este e-mail." };
+    setSolicitacoesSenha(prev=>[...prev,{
+      id:Date.now(),
+      email:em,
+      data:new Date().toISOString().slice(0,10),
+      status:"Pendente"
+    }]);
+    return { ok:true, msg:"Solicitação enviada. A liderança irá definir uma senha provisória." };
+  };
 
   if(!usuarioLogado){
-    return <LoginScreen onLogin={doLogin} onLoginError={loginError} onRequestRegistration={requestRegistration} igrejas={igrejas} loading={loginLoading} />;
+    return <LoginScreen onLogin={doLogin} onLoginError={loginError} onRequestRegistration={requestRegistration} onRequestPasswordReset={requestPasswordReset} igrejas={igrejas} loading={loginLoading} />;
   }
 
   return (
