@@ -84,6 +84,7 @@ const CARGOS_INIT = [
   {id:7,nome:"Líder de Ministério",nivel:4,descricao:"Responsável por um ministério",cor:"bg-amber-700"},
   {id:8,nome:"Membro",nivel:5,descricao:"Membro sem cargo específico",cor:"bg-zinc-600"},
 ];
+const MODULOS_PLATAFORMA = ["dashboard","igrejas","membros","visitantes","ministerios","eventos","comunicacao","cargos","acesso","relatorios"];
 const IGREJAS_INIT = [
   {id:1,nome:"Igreja Central",cidade:"Mogi das Cruzes",estado:"SP",endereco:"Rua das Acácias, 500",pastor:"Pastor João Carlos",telefone:"(11) 4001-0001",email:"central@secap.com.br",status:"Ativa",foto:""},
   {id:2,nome:"Filial Zona Norte",cidade:"Mogi das Cruzes",estado:"SP",endereco:"Av. Brasil, 1200",pastor:"Pastor Ricardo Alves",telefone:"(11) 4001-0002",email:"zonanorte@secap.com.br",status:"Ativa",foto:""},
@@ -127,7 +128,7 @@ const PEDIDOS_ORACAO_INIT = [
   {id:2,igrejaId:2,nome:"Leandro Pinto",origem:"Visitante",pedido:"Saúde da família",status:"Em acompanhamento",responsavel:"Ricardo Alves",data:"2026-04-08"},
 ];
 const TENANTS_INIT = [
-  { id:1, nome:"SECAP (Demo)", status:"Ativo", plano:"Piloto", limiteUsuarios:200, contato:"pastor@secap.com.br", corTema:"#3C485C", logo:"" }
+  { id:1, nome:"SECAP (Demo)", status:"Ativo", plano:"Piloto", limiteUsuarios:200, contato:"pastor@secap.com.br", corTema:"#3C485C", logo:"", modulos:[...MODULOS_PLATAFORMA] }
 ];
 const USUARIOS_INIT = [
   {id:100,tenantId:null,igrejaId:null,nome:"Master SECAP",email:"master@secap.com.br",senha:"123456",perfil:"Master",ministerio:"—",ativo:true},
@@ -141,6 +142,7 @@ const SOLICITACOES_CADASTRO_INIT = [];
 const SOLICITACOES_SENHA_INIT = [];
 const EMAILS_AUTOMATICOS_INIT = [];
 const FUNCIONALIDADES = [
+  { key:"masterAnalytics", label:"Master Analytics", grupo:"Administração SaaS" },
   { key:"tenants", label:"Clientes", grupo:"Administração SaaS" },
   { key:"dashboard", label:"Dashboard", grupo:"Visão geral" },
   { key:"igrejas", label:"Igrejas", grupo:"Cadastros" },
@@ -370,6 +372,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
 // --- DRAWER (mobile menu) ------------------------------------------------------
 function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, nav, allowedPages, brandColor, brandLogo }) {
   const NAV_ALL = [
+    {id:"masterAnalytics",icon:"🌐",label:"Master"},
     {id:"clientes",icon:"🏢",label:"Clientes"},
     {id:"dashboard",icon:"📊",label:"Dashboard"},
     {id:"igrejas",icon:"🏛️",label:"Igrejas"},
@@ -417,6 +420,7 @@ function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, n
 
 // --- BOTTOM NAV (mobile) -------------------------------------------------------
 const BOTTOM_NAV = [
+  {id:"masterAnalytics",icon:"🌐",label:"Master"},
   {id:"clientes",icon:"🏢",label:"Clientes"},
   {id:"dashboard",icon:"📊",label:"Início"},
   {id:"membros",icon:"👥",label:"Membros"},
@@ -446,6 +450,7 @@ function BottomNav({ pagina, nav, onMaisClick, allowedPages }) {
 
 // --- SIDEBAR (desktop only) ----------------------------------------------------
 const NAV_DESKTOP = [
+  {id:"masterAnalytics",icon:"🌐",label:"Master"},
   {id:"clientes",icon:"🏢",label:"Clientes"},
   {id:"dashboard",icon:"📊",label:"Dashboard"},
   {id:"igrejas",icon:"🏛️",label:"Igrejas"},
@@ -2087,9 +2092,51 @@ function Relatorios({ membros, visitantes, ministerios, igrejas, cargos, igrejaA
   );
 }
 
-function Clientes({ tenants, setTenants, usuarios }) {
+function MasterAnalytics({ tenants, usuarios, igrejas, membros, visitantes, eventos }) {
+  const [fStatus, setFStatus] = useState("Todos");
+  const [fPlano, setFPlano] = useState("Todos");
+  const [fTenant, setFTenant] = useState("");
+  const base = tenants.filter(t=>(fStatus==="Todos"||t.status===fStatus) && (fPlano==="Todos"||t.plano===fPlano) && (!fTenant || t.id===parseInt(fTenant)));
+  const planos = [...new Set(tenants.map(t=>t.plano))];
+  return (
+    <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+      <div><h2 style={{ color:C.textDark,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",fontSize:18,margin:0,fontWeight:700 }}>Master Analytics</h2><p style={{ color:C.textLight,fontSize:12,margin:0 }}>Visão consolidada de todos os clientes</p></div>
+      <Card style={{ padding:12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10 }}>
+        <Slct label="Cliente" value={fTenant} onChange={e=>setFTenant(e.target.value)}><option value="">Todos</option>{tenants.map(t=><option key={t.id} value={t.id}>{t.nome}</option>)}</Slct>
+        <Slct label="Status" value={fStatus} onChange={e=>setFStatus(e.target.value)}><option>Todos</option><option>Ativo</option><option>Inativo</option></Slct>
+        <Slct label="Plano" value={fPlano} onChange={e=>setFPlano(e.target.value)}><option>Todos</option>{planos.map(p=><option key={p}>{p}</option>)}</Slct>
+      </Card>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(5, minmax(130px, 1fr))",gap:8 }}>
+        <StatCard icon="🏢" label="Clientes" value={base.length} />
+        <StatCard icon="👤" label="Usuários" value={usuarios.filter(u=>u.perfil!=="Master" && base.some(t=>t.id===(u.tenantId??1))).length} />
+        <StatCard icon="🏛️" label="Igrejas" value={igrejas.filter(x=>base.some(t=>t.id===(x.tenantId??1))).length} />
+        <StatCard icon="👥" label="Membros" value={membros.filter(x=>base.some(t=>t.id===(x.tenantId??1))).length} />
+        <StatCard icon="📅" label="Eventos" value={eventos.filter(x=>base.some(t=>t.id===(x.tenantId??1))).length} />
+      </div>
+      <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
+        {base.map(t=>{
+          const u = usuarios.filter(x=>x.perfil!=="Master" && (x.tenantId??1)===t.id).length;
+          const ig = igrejas.filter(x=>(x.tenantId??1)===t.id).length;
+          const mb = membros.filter(x=>(x.tenantId??1)===t.id && x.status==="Ativo").length;
+          const vs = visitantes.filter(x=>(x.tenantId??1)===t.id).length;
+          return <Card key={t.id} style={{ padding:"10px 12px" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",gap:8 }}>
+              <div>
+                <div style={{ fontSize:14,color:C.textDark,fontWeight:700 }}>{t.nome}</div>
+                <div style={{ fontSize:11,color:C.textLight }}>{t.plano} · {t.status} · {u}/{t.limiteUsuarios} usuários</div>
+              </div>
+              <div style={{ fontSize:12,color:C.textMed }}>{ig} igrejas · {mb} membros · {vs} visitantes</div>
+            </div>
+          </Card>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Clientes({ tenants, setTenants, usuarios, onImpersonate }) {
   const [modal, setModal] = useState(null);
-  const EMPTY = { nome:"", status:"Ativo", plano:"Starter", limiteUsuarios:30, contato:"", corTema:"#3C485C", logo:"" };
+  const EMPTY = { nome:"", status:"Ativo", plano:"Starter", limiteUsuarios:30, contato:"", corTema:"#3C485C", logo:"", modulos:[...MODULOS_PLATAFORMA] };
   const save = (f) => {
     if(modal.mode==="new") setTenants(prev=>[...prev, { ...f, id:Date.now() }]);
     else setTenants(prev=>prev.map(t=>t.id===f.id?f:t));
@@ -2118,12 +2165,16 @@ function Clientes({ tenants, setTenants, usuarios }) {
                 <Pill label={t.plano} styleStr={SP["Secretaria"]} />
               </div>
               <div style={{ marginTop:3,fontSize:11,color:C.textLight }}>Contato: {t.contato || "—"} · Usuários: {totalUsuarios}/{t.limiteUsuarios}</div>
+              <div style={{ marginTop:2,fontSize:11,color:C.textLight }}>{(t.modulos||[]).length} módulo(s) ativo(s)</div>
             </div>
-            <RowActions onEdit={()=>setModal({ mode:"edit", data:{ ...t } })} onDelete={()=>{
+            <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+              <Btn variant="secondary" style={{ padding:"5px 8px",fontSize:11 }} onClick={()=>onImpersonate?.(t.id)}>Entrar como cliente</Btn>
+              <RowActions onEdit={()=>setModal({ mode:"edit", data:{ ...t } })} onDelete={()=>{
               const emUso = usuarios.some(u=>(u.tenantId ?? 1)===t.id);
               if(emUso) return alert("Existem usuários vinculados a este cliente.");
               if(window.confirm(`Remover cliente "${t.nome}"?`)) setTenants(prev=>prev.filter(x=>x.id!==t.id));
-            }} />
+              }} />
+            </div>
           </Card>;
         })}
       </div>
@@ -2164,9 +2215,24 @@ function Clientes({ tenants, setTenants, usuarios }) {
               </div>
             </div>
           </div>
+          <div>
+            <label style={{ display:"block",fontSize:11,color:C.textLight,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.5px",fontWeight:600 }}>Módulos do plano</label>
+            <div style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:10,display:"grid",gridTemplateColumns:"1fr 1fr",gap:6 }}>
+              {MODULOS_PLATAFORMA.map(m=><label key={m} style={{ display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textMed,background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 8px" }}>
+                <input type="checkbox" checked={(modal.data.modulos||[]).includes(m)} onChange={(e)=>{
+                  setModal(p=>{
+                    const atual = p.data.modulos || [];
+                    const prox = e.target.checked ? [...atual, m] : atual.filter(x=>x!==m);
+                    return { ...p, data:{ ...p.data, modulos:prox } };
+                  });
+                }} />
+                <span>{PAGE_LABELS[m] || m}</span>
+              </label>)}
+            </div>
+          </div>
           <div style={{ display:"flex",justifyContent:"flex-end",gap:8,paddingTop:8 }}>
             <Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn onClick={()=>{ if(!modal.data.nome?.trim()) return alert("Nome obrigatório"); save(modal.data); }}>Salvar</Btn>
+            <Btn onClick={()=>{ if(!modal.data.nome?.trim()) return alert("Nome obrigatório"); if(!(modal.data.modulos||[]).length) return alert("Selecione ao menos um módulo para o plano."); save(modal.data); }}>Salvar</Btn>
           </div>
         </div>
       </Modal>}
@@ -2175,8 +2241,8 @@ function Clientes({ tenants, setTenants, usuarios }) {
 }
 
 // --- APP ROOT ------------------------------------------------------------------
-const PAGE_LABELS = { clientes:"Clientes",dashboard:"Dashboard",igrejas:"Igrejas",membros:"Membros",visitantes:"Visitantes",ministerios:"Ministérios",eventos:"Eventos",comunicacao:"Comunicação",cargos:"Cargos",acesso:"Acesso",relatorios:"Relatórios" };
-const PAGE_ICONS = { clientes:"🏢",dashboard:"📊",igrejas:"🏛️",membros:"👥",visitantes:"🤝",ministerios:"⛪",eventos:"📅",comunicacao:"📣",cargos:"🎖️",acesso:"🔐",relatorios:"📋" };
+const PAGE_LABELS = { masterAnalytics:"Master Analytics",clientes:"Clientes",dashboard:"Dashboard",igrejas:"Igrejas",membros:"Membros",visitantes:"Visitantes",ministerios:"Ministérios",eventos:"Eventos",comunicacao:"Comunicação",cargos:"Cargos",acesso:"Acesso",relatorios:"Relatórios" };
+const PAGE_ICONS = { masterAnalytics:"🌐",clientes:"🏢",dashboard:"📊",igrejas:"🏛️",membros:"👥",visitantes:"🤝",ministerios:"⛪",eventos:"📅",comunicacao:"📣",cargos:"🎖️",acesso:"🔐",relatorios:"📋" };
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -2207,6 +2273,7 @@ export default function App() {
   const [syncStatus,setSyncStatus]=useState("local");
   const isHydratingRef = useRef(true);
   const saveTimerRef = useRef(null);
+  const tenantMigrationDoneRef = useRef(false);
   const perfilAtual = useMemo(()=>perfis.find(p=>p.nome===perfilAtualNome)||perfis[0], [perfis,perfilAtualNome]);
   const membrosAtivosContexto = useMemo(
     ()=>membros.filter(m=>m.status==="Ativo" && (!igrejaAtual || m.igrejaId===igrejaAtual)),
@@ -2226,7 +2293,12 @@ export default function App() {
   );
   const brandColor = tenantAtual?.corTema || C.sideBg;
   const brandLogo = tenantAtual?.logo || logoSecap;
+  const tenantViewId = useMemo(() => {
+    if (perfilAtualNome === "Master") return tenantAtualId ?? 1;
+    return usuarioLogado?.tenantId ?? tenantAtualId ?? 1;
+  }, [perfilAtualNome, usuarioLogado, tenantAtualId]);
   const pageToPerm = {
+    masterAnalytics:"masterAnalytics",
     clientes:"tenants",
     dashboard:"dashboard",
     igrejas:"igrejas",
@@ -2239,8 +2311,52 @@ export default function App() {
     acesso:"acesso",
     relatorios:"relatorios",
   };
-  const canAccess = (pageId) => !!perfilAtual?.permissoes?.[pageToPerm[pageId]];
+  const planAllows = (pageId) => {
+    if(perfilAtualNome==="Master") return true;
+    const modulos = tenantAtual?.modulos || MODULOS_PLATAFORMA;
+    return modulos.includes(pageId);
+  };
+  const canAccess = (pageId) => !!perfilAtual?.permissoes?.[pageToPerm[pageId]] && planAllows(pageId);
   const allowedPages = Object.keys(pageToPerm).filter(canAccess);
+  const scopeByTenant = (arr) => (arr || []).filter((x) => (x?.tenantId ?? 1) === tenantViewId);
+  const mergeTenantScoped = (prev, tenantScopedNext) => {
+    const keep = (prev || []).filter((x) => (x?.tenantId ?? 1) !== tenantViewId);
+    return [...keep, ...(tenantScopedNext || [])];
+  };
+  const makeTenantSetter = (setGlobal) => (updater) => {
+    setGlobal((prev) => {
+      const tenantPrev = scopeByTenant(prev);
+      const tenantNext = typeof updater === "function" ? updater(tenantPrev) : updater;
+      const normalized = (tenantNext || []).map((item) => ({ tenantId: tenantViewId, ...item }));
+      return mergeTenantScoped(prev, normalized);
+    });
+  };
+  const igrejasScoped = useMemo(() => scopeByTenant(igrejas), [igrejas, tenantViewId]);
+  const membrosScoped = useMemo(() => scopeByTenant(membros), [membros, tenantViewId]);
+  const visitantesScoped = useMemo(() => scopeByTenant(visitantes), [visitantes, tenantViewId]);
+  const eventosScoped = useMemo(() => scopeByTenant(eventos), [eventos, tenantViewId]);
+  const comunicadosScoped = useMemo(() => scopeByTenant(comunicados), [comunicados, tenantViewId]);
+  const pedidosOracaoScoped = useMemo(() => scopeByTenant(pedidosOracao), [pedidosOracao, tenantViewId]);
+  const ministeriosScoped = useMemo(() => scopeByTenant(ministerios), [ministerios, tenantViewId]);
+  const cargosScoped = useMemo(() => scopeByTenant(cargos), [cargos, tenantViewId]);
+  const usuariosScoped = useMemo(() => scopeByTenant(usuarios), [usuarios, tenantViewId]);
+  const setIgrejasScoped = makeTenantSetter(setIgrejas);
+  const setMembrosScoped = makeTenantSetter(setMembros);
+  const setVisitantesScoped = makeTenantSetter(setVisitantes);
+  const setEventosScoped = makeTenantSetter(setEventos);
+  const setComunicadosScoped = makeTenantSetter(setComunicados);
+  const setPedidosOracaoScoped = makeTenantSetter(setPedidosOracao);
+  const setMinisteriosScoped = makeTenantSetter(setMinisterios);
+  const setCargosScoped = makeTenantSetter(setCargos);
+  const setUsuariosScoped = makeTenantSetter(setUsuarios);
+  const templatesContatoScoped = useMemo(() => (templatesContato?.[tenantViewId] || {}), [templatesContato, tenantViewId]);
+  const setTemplatesContatoScoped = (updater) => {
+    setTemplatesContato((prev) => {
+      const current = prev?.[tenantViewId] || {};
+      const next = typeof updater === "function" ? updater(current) : updater;
+      return { ...(prev || {}), [tenantViewId]: next || {} };
+    });
+  };
 
   const nav = (id) => { if(canAccess(id)){ setPagina(id); setDrawerOpen(false); } };
   const igNome = igrejaAtual ? igrejas.find(ig=>ig.id===igrejaAtual)?.nome : "Todas as igrejas";
@@ -2252,6 +2368,22 @@ export default function App() {
     if(perfilAtualNome==="Membro" && !membroAtualId && membrosAtivosContexto[0]) setMembroAtualId(membrosAtivosContexto[0].id);
     if(perfilAtualNome==="Membro" && membroAtualId && !membros.some(m=>m.id===membroAtualId&&m.status==="Ativo")) setMembroAtualId(membrosAtivosContexto[0]?.id||null);
   }, [perfilAtualNome,membroAtualId,membros,membrosAtivosContexto]);
+  useEffect(() => {
+    if (tenantMigrationDoneRef.current) return;
+    tenantMigrationDoneRef.current = true;
+    const withTenant = (arr, fallbackTenant = 1) => (arr || []).map((x) => ("tenantId" in x ? x : { ...x, tenantId: fallbackTenant }));
+    setIgrejas((p) => withTenant(p));
+    setMembros((p) => withTenant(p));
+    setVisitantes((p) => withTenant(p));
+    setEventos((p) => withTenant(p));
+    setComunicados((p) => withTenant(p));
+    setPedidosOracao((p) => withTenant(p));
+    setMinisterios((p) => withTenant(p));
+    setCargos((p) => withTenant(p));
+    setUsuarios((p) => (p || []).map((u) => (u.perfil === "Master" ? { ...u, tenantId: null } : ("tenantId" in u ? u : { ...u, tenantId: 1 }))));
+    setSolicitacoesCadastro((p) => withTenant(p));
+    setSolicitacoesSenha((p) => withTenant(p));
+  }, []);
   useEffect(()=>{
     if(!authUserId) return;
     const u = usuarios.find(x=>x.id===authUserId);
@@ -2278,6 +2410,16 @@ export default function App() {
       setAuthUserId(null);
     }
   }, [usuarioLogado, tenants]);
+  useEffect(()=>{
+    const href = brandLogo || logoSecap;
+    let link = document.querySelector("link[rel='icon']");
+    if(!link){
+      link = document.createElement("link");
+      link.setAttribute("rel","icon");
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", href);
+  }, [brandLogo]);
 
   useEffect(() => {
     let active = true;
@@ -2334,20 +2476,21 @@ export default function App() {
   }, [tenantAtualId, tenants, igrejaAtual, igrejas, membros, visitantes, eventos, comunicados, pedidosOracao, templatesContato, ministerios, usuarios, solicitacoesCadastro, solicitacoesSenha, emailsAutomaticos, perfis, cargos, perfilAtualNome, membroAtualId]);
 
   const renderPage = () => {
-    if (pagina==="clientes")    return <Clientes tenants={tenants} setTenants={setTenants} usuarios={usuarios}/>;
+    if (pagina==="masterAnalytics") return <MasterAnalytics tenants={tenants} usuarios={usuarios} igrejas={igrejas} membros={membros} visitantes={visitantes} eventos={eventos} />;
+    if (pagina==="clientes")    return <Clientes tenants={tenants} setTenants={setTenants} usuarios={usuarios} onImpersonate={(id)=>{ setTenantAtualId(id); setPagina("dashboard"); }}/>;
     if (pagina==="dashboard") {
-      if(perfilAtualNome==="Membro") return <MembroInicio igrejaAtual={igrejaAtual} igrejas={igrejas} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao} membroAtual={membroAtual} setEventos={setEventos} setPedidosOracao={setPedidosOracao}/>;
-      return <Dashboard igrejas={igrejas} membros={membros} visitantes={visitantes} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
+      if(perfilAtualNome==="Membro") return <MembroInicio igrejaAtual={igrejaAtual} igrejas={igrejasScoped} eventos={eventosScoped} comunicados={comunicadosScoped} pedidosOracao={pedidosOracaoScoped} membroAtual={membroAtual} setEventos={setEventosScoped} setPedidosOracao={setPedidosOracaoScoped}/>;
+      return <Dashboard igrejas={igrejasScoped} membros={membrosScoped} visitantes={visitantesScoped} ministerios={ministeriosScoped} igrejaAtual={igrejaAtual}/>;
     }
-    if (pagina==="igrejas")     return <Igrejas igrejas={igrejas} setIgrejas={setIgrejas} membros={membros} visitantes={visitantes}/>;
-    if (pagina==="membros")     return <Membros membros={membros} setMembros={setMembros} ministerios={ministerios} igrejas={igrejas} cargos={cargos} igrejaAtual={igrejaAtual}/>;
-    if (pagina==="visitantes")  return <Visitantes visitantes={visitantes} setVisitantes={setVisitantes} setMembros={setMembros} igrejas={igrejas} igrejaAtual={igrejaAtual} templatesContato={templatesContato} setTemplatesContato={setTemplatesContato}/>;
-    if (pagina==="eventos")     return <Eventos eventos={eventos} setEventos={setEventos} igrejas={igrejas} igrejaAtual={igrejaAtual} membros={membros} visitantes={visitantes}/>;
-    if (pagina==="comunicacao") return <Comunicacao comunicados={comunicados} setComunicados={setComunicados} pedidosOracao={pedidosOracao} setPedidosOracao={setPedidosOracao} igrejas={igrejas} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
-    if (pagina==="ministerios") return <Ministerios ministerios={ministerios} setMinisterios={setMinisterios} membros={membros} igrejas={igrejas} igrejaAtual={igrejaAtual}/>;
-    if (pagina==="cargos")      return <Cargos cargos={cargos} setCargos={setCargos} membros={membros}/>;
-    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro} solicitacoesSenha={solicitacoesSenha} setSolicitacoesSenha={setSolicitacoesSenha} emailsAutomaticos={emailsAutomaticos} setEmailsAutomaticos={setEmailsAutomaticos} tenants={tenants} tenantAtualId={tenantAtualId} perfilAtualNome={perfilAtualNome}/>;
-    if (pagina==="relatorios")  return <Relatorios membros={membros} visitantes={visitantes} ministerios={ministerios} igrejas={igrejas} cargos={cargos} igrejaAtual={igrejaAtual} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao}/>;
+    if (pagina==="igrejas")     return <Igrejas igrejas={igrejasScoped} setIgrejas={setIgrejasScoped} membros={membrosScoped} visitantes={visitantesScoped}/>;
+    if (pagina==="membros")     return <Membros membros={membrosScoped} setMembros={setMembrosScoped} ministerios={ministeriosScoped} igrejas={igrejasScoped} cargos={cargosScoped} igrejaAtual={igrejaAtual}/>;
+    if (pagina==="visitantes")  return <Visitantes visitantes={visitantesScoped} setVisitantes={setVisitantesScoped} setMembros={setMembrosScoped} igrejas={igrejasScoped} igrejaAtual={igrejaAtual} templatesContato={templatesContatoScoped} setTemplatesContato={setTemplatesContatoScoped}/>;
+    if (pagina==="eventos")     return <Eventos eventos={eventosScoped} setEventos={setEventosScoped} igrejas={igrejasScoped} igrejaAtual={igrejaAtual} membros={membrosScoped} visitantes={visitantesScoped}/>;
+    if (pagina==="comunicacao") return <Comunicacao comunicados={comunicadosScoped} setComunicados={setComunicadosScoped} pedidosOracao={pedidosOracaoScoped} setPedidosOracao={setPedidosOracaoScoped} igrejas={igrejasScoped} ministerios={ministeriosScoped} igrejaAtual={igrejaAtual}/>;
+    if (pagina==="ministerios") return <Ministerios ministerios={ministeriosScoped} setMinisterios={setMinisteriosScoped} membros={membrosScoped} igrejas={igrejasScoped} igrejaAtual={igrejaAtual}/>;
+    if (pagina==="cargos")      return <Cargos cargos={cargosScoped} setCargos={setCargosScoped} membros={membrosScoped}/>;
+    if (pagina==="acesso")      return <Acesso usuarios={usuariosScoped} setUsuarios={setUsuariosScoped} igrejas={igrejasScoped} ministerios={ministeriosScoped} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro} solicitacoesSenha={solicitacoesSenha} setSolicitacoesSenha={setSolicitacoesSenha} emailsAutomaticos={emailsAutomaticos} setEmailsAutomaticos={setEmailsAutomaticos} tenants={tenants} tenantAtualId={tenantAtualId} perfilAtualNome={perfilAtualNome}/>;
+    if (pagina==="relatorios")  return <Relatorios membros={membrosScoped} visitantes={visitantesScoped} ministerios={ministeriosScoped} igrejas={igrejasScoped} cargos={cargosScoped} igrejaAtual={igrejaAtual} eventos={eventosScoped} comunicados={comunicadosScoped} pedidosOracao={pedidosOracaoScoped}/>;
     return null;
   };
   const exportarBackup = () => {
