@@ -2385,18 +2385,14 @@ export default function App() {
     setSolicitacoesSenha((p) => withTenant(p));
   }, []);
   useEffect(() => {
-    setPerfis((prev) => {
-      const hasMaster = (prev || []).some((p) => p.nome === "Master");
-      if (hasMaster) return prev;
-      return [{ id:99, nome:"Master", nivel:0, permissoes:allPerms() }, ...(prev || [])];
-    });
-    setUsuarios((prev) => {
-      const list = prev || [];
-      const byEmail = list.some((u) => (u.email || "").trim().toLowerCase() === "master@secap.com.br");
-      if (byEmail) {
-        return list.map((u) => ((u.email || "").trim().toLowerCase() === "master@secap.com.br" ? { ...u, perfil:"Master", ativo:true, tenantId:null } : u));
-      }
-      return [{
+    if (syncStatus === "carregando") return;
+    const hasMasterPerfil = (perfis || []).some((p) => p.nome === "Master");
+    if (!hasMasterPerfil) {
+      setPerfis((prev) => [{ id:99, nome:"Master", nivel:0, permissoes:allPerms() }, ...(prev || [])]);
+    }
+    const hasMasterUser = (usuarios || []).some((u) => (u.email || "").trim().toLowerCase() === "master@secap.com.br");
+    if (!hasMasterUser) {
+      setUsuarios((prev) => ([{
         id:100,
         tenantId:null,
         igrejaId:null,
@@ -2406,9 +2402,14 @@ export default function App() {
         perfil:"Master",
         ministerio:"—",
         ativo:true
-      }, ...list];
-    });
-  }, []);
+      }, ...(prev || [])]));
+      return;
+    }
+    const badMaster = (usuarios || []).some((u) => (u.email || "").trim().toLowerCase() === "master@secap.com.br" && (u.perfil !== "Master" || !u.ativo));
+    if (badMaster) {
+      setUsuarios((prev) => (prev || []).map((u) => ((u.email || "").trim().toLowerCase() === "master@secap.com.br" ? { ...u, perfil:"Master", ativo:true, tenantId:null } : u)));
+    }
+  }, [syncStatus, perfis, usuarios]);
   useEffect(()=>{
     if(!authUserId) return;
     const u = usuarios.find(x=>x.id===authUserId);

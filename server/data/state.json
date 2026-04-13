@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-13T22:04:50.058Z",
+  "updatedAt": "2026-04-13T22:09:44.990Z",
   "state": {
     "tenantAtualId": 1,
     "tenants": [
@@ -431,6 +431,17 @@
     ],
     "usuarios": [
       {
+        "id": 100,
+        "tenantId": null,
+        "igrejaId": null,
+        "nome": "Master SECAP",
+        "email": "master@secap.com.br",
+        "senha": "123456",
+        "perfil": "Master",
+        "ministerio": "—",
+        "ativo": true
+      },
+      {
         "id": 1,
         "igrejaId": null,
         "nome": "Pastor João Carlos",
@@ -480,6 +491,29 @@
     "solicitacoesSenha": [],
     "emailsAutomaticos": [],
     "perfis": [
+      {
+        "id": 99,
+        "nome": "Master",
+        "nivel": 0,
+        "permissoes": {
+          "masterAnalytics": true,
+          "tenants": true,
+          "dashboard": true,
+          "igrejas": true,
+          "membros": true,
+          "visitantes": true,
+          "ministerios": true,
+          "cargos": true,
+          "eventos": true,
+          "comunicacao": true,
+          "acesso": true,
+          "relatorios": true,
+          "kanbanVisitantes": true,
+          "converterVisitante": true,
+          "editarMinisterio": true,
+          "uploadFotosIgreja": true
+        }
+      },
       {
         "id": 1,
         "nome": "Admin",
