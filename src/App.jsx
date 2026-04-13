@@ -304,7 +304,9 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
     <div style={{ minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:C.pageBg,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif" }}>
       <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
         <div style={{ display:"flex",justifyContent:"center",marginBottom:10 }}>
-          <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }} />
+          <div style={{ width:96,height:96,borderRadius:12,background:"#dde4f0",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center" }}>
+            <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.95)" }} />
+          </div>
         </div>
         <h1 style={{ margin:"0 0 4px",fontSize:22,color:C.textDark,textAlign:"center",fontWeight:800 }}>Acesso ao Sistema</h1>
         <p style={{ margin:"0 0 16px",fontSize:13,color:C.textLight,textAlign:"center" }}>Entre com seu e-mail e senha</p>
