@@ -127,7 +127,7 @@ const PEDIDOS_ORACAO_INIT = [
   {id:2,igrejaId:2,nome:"Leandro Pinto",origem:"Visitante",pedido:"Saúde da família",status:"Em acompanhamento",responsavel:"Ricardo Alves",data:"2026-04-08"},
 ];
 const TENANTS_INIT = [
-  { id:1, nome:"SECAP (Demo)", status:"Ativo", plano:"Piloto", limiteUsuarios:200, contato:"pastor@secap.com.br" }
+  { id:1, nome:"SECAP (Demo)", status:"Ativo", plano:"Piloto", limiteUsuarios:200, contato:"pastor@secap.com.br", corTema:"#3C485C", logo:"" }
 ];
 const USUARIOS_INIT = [
   {id:100,tenantId:null,igrejaId:null,nome:"Master SECAP",email:"master@secap.com.br",senha:"123456",perfil:"Master",ministerio:"—",ativo:true},
@@ -288,7 +288,7 @@ function RowActions({ onView, onEdit, onDelete }) {
   );
 }
 
-function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPasswordReset, igrejas, loading }) {
+function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPasswordReset, igrejas, loading, logo, brandColor }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [cadastroOpen, setCadastroOpen] = useState(false);
@@ -305,7 +305,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
       <div style={{ width:"100%",maxWidth:420,background:"#fff",border:`1px solid ${C.border}`,borderRadius:14,padding:20,boxShadow:"0 10px 24px rgba(20,30,50,0.08)" }}>
         <div style={{ display:"flex",justifyContent:"center",marginBottom:10 }}>
           <div style={{ width:96,height:96,borderRadius:12,background:"#dde4f0",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <img src={logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.95)" }} />
+            <img src={logo || logoSecap} alt="SECAP" style={{ width:84,height:84,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.95)" }} />
           </div>
         </div>
         <h1 style={{ margin:"0 0 4px",fontSize:22,color:C.textDark,textAlign:"center",fontWeight:800 }}>Acesso ao Sistema</h1>
@@ -314,7 +314,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
           <Inp label="E-mail" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" />
           <Inp label="Senha" type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••" />
           {onLoginError && <div style={{ fontSize:12,color:C.red,background:"#fff4f4",border:`1px solid #f2cccc`,borderRadius:8,padding:"8px 10px" }}>{onLoginError}</div>}
-          <Btn disabled={loading} onClick={()=>onLogin(email, senha)}>{loading ? "Entrando..." : "Entrar"}</Btn>
+          <Btn disabled={loading} onClick={()=>onLogin(email, senha)} style={{ background:brandColor||C.oliva }}>{loading ? "Entrando..." : "Entrar"}</Btn>
           <Btn variant="secondary" onClick={()=>setCadastroOpen(true)}>Solicitar cadastro</Btn>
           <Btn variant="ghost" onClick={()=>setSenhaOpen(true)}>Esqueci minha senha</Btn>
         </div>
@@ -368,7 +368,7 @@ function LoginScreen({ onLoginError, onLogin, onRequestRegistration, onRequestPa
 }
 
 // --- DRAWER (mobile menu) ------------------------------------------------------
-function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, nav, allowedPages }) {
+function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, nav, allowedPages, brandColor, brandLogo }) {
   const NAV_ALL = [
     {id:"clientes",icon:"🏢",label:"Clientes"},
     {id:"dashboard",icon:"📊",label:"Dashboard"},
@@ -385,9 +385,9 @@ function Drawer({ open, onClose, igrejas, igrejaAtual, setIgrejaAtual, pagina, n
   return (
     <>
       {open && <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.45)" }} onClick={onClose}/>}
-      <div style={{ position:"fixed",top:0,left:0,height:"100%",width:260,background:C.sideBg,zIndex:50,transform:open?"translateX(0)":"translateX(-100%)",transition:"transform 0.25s ease",display:"flex",flexDirection:"column",overflowY:"auto" }}>
+      <div style={{ position:"fixed",top:0,left:0,height:"100%",width:260,background:brandColor||C.sideBg,zIndex:50,transform:open?"translateX(0)":"translateX(-100%)",transition:"transform 0.25s ease",display:"flex",flexDirection:"column",overflowY:"auto" }}>
         <div style={{ padding:"24px 16px 16px",borderBottom:"1px solid rgba(255,255,255,0.1)",display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
-          <img src={logoSecap} alt="SECAP" style={{ width:70,height:56,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }}/>
+          <img src={brandLogo || logoSecap} alt="SECAP" style={{ width:70,height:56,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }}/>
           <div style={{ textAlign:"center",lineHeight:1.4 }}>
             <div style={{ fontSize:8,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:700 }}>Igreja Evangélica Pentecostal</div>
             <div style={{ fontSize:11,color:"rgba(255,255,255,0.9)",fontWeight:700,marginTop:2 }}>As Sete Cartas do Apocalipse</div>
@@ -459,11 +459,11 @@ const NAV_DESKTOP = [
   {id:"relatorios",icon:"📋",label:"Relatórios"},
 ];
 
-function Sidebar({ pagina, nav, igrejas, igrejaAtual, setIgrejaAtual, allowedPages }) {
+function Sidebar({ pagina, nav, igrejas, igrejaAtual, setIgrejaAtual, allowedPages, brandColor, brandLogo }) {
   return (
-    <aside style={{ width:210,background:C.sideBg,display:"flex",flexDirection:"column",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden" }}>
+    <aside style={{ width:210,background:brandColor||C.sideBg,display:"flex",flexDirection:"column",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden" }}>
       <div style={{ padding:"20px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.1)",display:"flex",flexDirection:"column",alignItems:"center",gap:8 }}>
-        <img src={logoSecap} alt="SECAP" style={{ width:66,height:52,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }}/>
+        <img src={brandLogo || logoSecap} alt="SECAP" style={{ width:66,height:52,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }}/>
         <div style={{ textAlign:"center",lineHeight:1.4 }}>
           <div style={{ fontSize:8,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:"1.5px",fontWeight:700 }}>Igreja Evangélica Pentecostal</div>
           <div style={{ fontSize:10.5,color:"rgba(255,255,255,0.9)",fontWeight:700,marginTop:2 }}>As Sete Cartas<br/>do Apocalipse</div>
@@ -1365,11 +1365,14 @@ function CargoForm({ data, onSave, onClose }) {
 }
 
 // --- ACESSO --------------------------------------------------------------------
-function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro, solicitacoesSenha, setSolicitacoesSenha, emailsAutomaticos, setEmailsAutomaticos }) {
+function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis, solicitacoesCadastro, setSolicitacoesCadastro, solicitacoesSenha, setSolicitacoesSenha, emailsAutomaticos, setEmailsAutomaticos, tenants, tenantAtualId, perfilAtualNome }) {
   const [modal,setModal]=useState(null);
   const [perfilModal,setPerfilModal]=useState(null);
-  const EMPTY={nome:"",email:"",senha:"123456",perfil:"Membro",ministerio:"",igrejaId:igrejas[0]?.id||null,ativo:true};
+  const EMPTY={nome:"",email:"",senha:"123456",perfil:"Membro",ministerio:"",tenantId:tenantAtualId||1,igrejaId:igrejas[0]?.id||null,ativo:true};
   const EMPTY_PERFIL={nome:"",nivel:5,permissoes:pickPerms(["dashboard"])};
+  const visUsuarios = perfilAtualNome==="Master" ? usuarios : usuarios.filter(u=>(u.tenantId ?? 1)===(tenantAtualId ?? 1));
+  const visSolicitacoesCadastro = perfilAtualNome==="Master" ? solicitacoesCadastro : solicitacoesCadastro.filter(s=>(s.tenantId ?? 1)===(tenantAtualId ?? 1));
+  const visSolicitacoesSenha = perfilAtualNome==="Master" ? solicitacoesSenha : solicitacoesSenha.filter(s=>(s.tenantId ?? 1)===(tenantAtualId ?? 1));
   const perfilMap=useMemo(()=>new Map(perfis.map(p=>[p.nome,p])),[perfis]);
   const perfilPillStyle=(nome)=>{
     const pf=perfilMap.get(nome);
@@ -1400,7 +1403,7 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:8 }}>
-        <div><h2 style={{ color:C.textDark,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",fontSize:18,margin:0,fontWeight:700 }}>Acesso</h2><p style={{ color:C.textLight,fontSize:12,margin:0 }}>{usuarios.length} usuários</p></div>
+        <div><h2 style={{ color:C.textDark,fontFamily:"Manrope, \"Segoe UI\", \"Helvetica Neue\", sans-serif",fontSize:18,margin:0,fontWeight:700 }}>Acesso</h2><p style={{ color:C.textLight,fontSize:12,margin:0 }}>{visUsuarios.length} usuários</p></div>
         <Btn onClick={()=>setModal({mode:"new",data:{...EMPTY}})}>+ Novo</Btn>
       </div>
       <Card style={{ padding:12 }}>
@@ -1411,7 +1414,7 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
           {perfis.map(p=>{
             const qtdPerm=Object.values(p.permissoes||{}).filter(Boolean).length;
-            const emUso=usuarios.filter(u=>u.perfil===p.nome).length;
+            const emUso=visUsuarios.filter(u=>u.perfil===p.nome).length;
             return <div key={p.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:10 }}>
               <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",gap:8 }}>
                 <div>
@@ -1434,13 +1437,13 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
       <Card style={{ padding:12 }}>
         <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
           <h3 style={{ color:C.textDark,fontSize:13,fontWeight:700,margin:0 }}>Solicitações de cadastro</h3>
-          <span style={{ fontSize:11,color:C.textLight }}>{solicitacoesCadastro.length} pendente(s)</span>
+          <span style={{ fontSize:11,color:C.textLight }}>{visSolicitacoesCadastro.length} pendente(s)</span>
         </div>
-        {solicitacoesCadastro.length===0 ? (
+        {visSolicitacoesCadastro.length===0 ? (
           <div style={{ fontSize:12,color:C.textLight }}>Nenhuma solicitação pendente.</div>
         ) : (
           <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
-            {solicitacoesCadastro.map(s=>{
+            {visSolicitacoesCadastro.map(s=>{
               const ig = igrejas.find(x=>x.id===s.igrejaId);
               return <div key={s.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10 }}>
                 <Avatar nome={s.nome} size="sm" />
@@ -1485,13 +1488,13 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
       <Card style={{ padding:12 }}>
         <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
           <h3 style={{ color:C.textDark,fontSize:13,fontWeight:700,margin:0 }}>Recuperação de senha</h3>
-          <span style={{ fontSize:11,color:C.textLight }}>{solicitacoesSenha.length} pendente(s)</span>
+          <span style={{ fontSize:11,color:C.textLight }}>{visSolicitacoesSenha.length} pendente(s)</span>
         </div>
-        {solicitacoesSenha.length===0 ? (
+        {visSolicitacoesSenha.length===0 ? (
           <div style={{ fontSize:12,color:C.textLight }}>Nenhum pedido pendente.</div>
         ) : (
           <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
-            {solicitacoesSenha.map(s=>{
+            {visSolicitacoesSenha.map(s=>{
               const u = usuarios.find(x=>(x.email||"").toLowerCase()===(s.email||"").toLowerCase());
               return <div key={s.id} style={{ background:C.cardBg2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10 }}>
                 <div style={{ flex:1,minWidth:0 }}>
@@ -1540,7 +1543,7 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
         )}
       </Card>
       <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
-        {usuarios.map(u=>{
+        {visUsuarios.map(u=>{
           const ig=igrejas.find(x=>x.id===u.igrejaId);
           const pf=perfilMap.get(u.perfil);
           return (
@@ -1569,6 +1572,9 @@ function Acesso({ usuarios, setUsuarios, igrejas, ministerios, perfis, setPerfis
           <Inp label="Nome *" value={modal.data.nome} onChange={e=>setModal(p=>({...p,data:{...p.data,nome:e.target.value}}))}/>
           <Inp label="E-mail *" value={modal.data.email} onChange={e=>setModal(p=>({...p,data:{...p.data,email:e.target.value}}))}/>
           <Inp label="Senha *" type="password" value={modal.data.senha||""} onChange={e=>setModal(p=>({...p,data:{...p.data,senha:e.target.value}}))}/>
+          {perfilAtualNome==="Master" && <Slct label="Cliente" value={modal.data.tenantId??tenantAtualId??1} onChange={e=>setModal(p=>({...p,data:{...p.data,tenantId:parseInt(e.target.value||"1")}}))}>
+            {tenants.map(t=><option key={t.id} value={t.id}>{t.nome}</option>)}
+          </Slct>}
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
             <Slct label="Perfil" value={modal.data.perfil} onChange={e=>setModal(p=>({...p,data:{...p.data,perfil:e.target.value}}))}>{perfis.map(x=><option key={x.id} value={x.nome}>{x.nome}</option>)}</Slct>
             <Slct label="Igreja" value={modal.data.igrejaId??""} onChange={e=>setModal(p=>({...p,data:{...p.data,igrejaId:e.target.value?parseInt(e.target.value):null}}))}><option value="">— Todas —</option>{igrejas.map(ig=><option key={ig.id} value={ig.id}>{ig.nome}</option>)}</Slct>
@@ -2083,7 +2089,7 @@ function Relatorios({ membros, visitantes, ministerios, igrejas, cargos, igrejaA
 
 function Clientes({ tenants, setTenants, usuarios }) {
   const [modal, setModal] = useState(null);
-  const EMPTY = { nome:"", status:"Ativo", plano:"Starter", limiteUsuarios:30, contato:"" };
+  const EMPTY = { nome:"", status:"Ativo", plano:"Starter", limiteUsuarios:30, contato:"", corTema:"#3C485C", logo:"" };
   const save = (f) => {
     if(modal.mode==="new") setTenants(prev=>[...prev, { ...f, id:Date.now() }]);
     else setTenants(prev=>prev.map(t=>t.id===f.id?f:t));
@@ -2102,6 +2108,9 @@ function Clientes({ tenants, setTenants, usuarios }) {
         {tenants.map(t=>{
           const totalUsuarios = usuarios.filter(u=>(u.tenantId ?? 1)===t.id).length;
           return <Card key={t.id} style={{ padding:"12px 14px",display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ width:28,height:28,borderRadius:8,background:t.corTema||C.sideBg,display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${C.border}` }}>
+              <img src={t.logo || logoSecap} alt={t.nome} style={{ width:20,height:20,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }} />
+            </div>
             <div style={{ flex:1,minWidth:0 }}>
               <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                 <span style={{ fontSize:14,color:C.textDark,fontWeight:700 }}>{t.nome}</span>
@@ -2135,6 +2144,25 @@ function Clientes({ tenants, setTenants, usuarios }) {
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
             <Inp label="Limite de usuários" type="number" min={1} value={modal.data.limiteUsuarios} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, limiteUsuarios:parseInt(e.target.value||"1") } }))} />
             <Inp label="Contato" value={modal.data.contato} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, contato:e.target.value } }))} />
+          </div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"end" }}>
+            <Inp label="Cor tema" type="color" value={modal.data.corTema||"#3C485C"} onChange={e=>setModal(p=>({ ...p, data:{ ...p.data, corTema:e.target.value } }))} />
+            <div>
+              <label style={{ display:"block",fontSize:11,color:C.textLight,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px",fontWeight:600 }}>Logo do cliente</label>
+              <div style={{ display:"flex",gap:8,alignItems:"center" }}>
+                <button onClick={()=>document.getElementById("tenant-logo")?.click()} style={{ background:"#fff",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",cursor:"pointer",fontSize:12,color:C.textMed }}>Enviar logo</button>
+                <input id="tenant-logo" type="file" accept="image/*" style={{ display:"none" }} onChange={(e)=>{
+                  const f = e.target.files?.[0];
+                  if(!f) return;
+                  const r = new FileReader();
+                  r.onload = () => setModal(p=>({ ...p, data:{ ...p.data, logo:r.result } }));
+                  r.readAsDataURL(f);
+                }} />
+                <div style={{ width:28,height:28,borderRadius:6,background:modal.data.corTema||C.sideBg,display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${C.border}` }}>
+                  <img src={modal.data.logo || logoSecap} alt="logo" style={{ width:20,height:20,objectFit:"contain",filter:"brightness(0) invert(1) opacity(0.9)" }} />
+                </div>
+              </div>
+            </div>
           </div>
           <div style={{ display:"flex",justifyContent:"flex-end",gap:8,paddingTop:8 }}>
             <Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -2196,6 +2224,8 @@ export default function App() {
     ()=>tenants.find(t=>t.id===tenantAtualId) || tenants[0] || null,
     [tenants,tenantAtualId]
   );
+  const brandColor = tenantAtual?.corTema || C.sideBg;
+  const brandLogo = tenantAtual?.logo || logoSecap;
   const pageToPerm = {
     clientes:"tenants",
     dashboard:"dashboard",
@@ -2316,7 +2346,7 @@ export default function App() {
     if (pagina==="comunicacao") return <Comunicacao comunicados={comunicados} setComunicados={setComunicados} pedidosOracao={pedidosOracao} setPedidosOracao={setPedidosOracao} igrejas={igrejas} ministerios={ministerios} igrejaAtual={igrejaAtual}/>;
     if (pagina==="ministerios") return <Ministerios ministerios={ministerios} setMinisterios={setMinisterios} membros={membros} igrejas={igrejas} igrejaAtual={igrejaAtual}/>;
     if (pagina==="cargos")      return <Cargos cargos={cargos} setCargos={setCargos} membros={membros}/>;
-    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro} solicitacoesSenha={solicitacoesSenha} setSolicitacoesSenha={setSolicitacoesSenha} emailsAutomaticos={emailsAutomaticos} setEmailsAutomaticos={setEmailsAutomaticos}/>;
+    if (pagina==="acesso")      return <Acesso usuarios={usuarios} setUsuarios={setUsuarios} igrejas={igrejas} ministerios={ministerios} perfis={perfis} setPerfis={setPerfis} solicitacoesCadastro={solicitacoesCadastro} setSolicitacoesCadastro={setSolicitacoesCadastro} solicitacoesSenha={solicitacoesSenha} setSolicitacoesSenha={setSolicitacoesSenha} emailsAutomaticos={emailsAutomaticos} setEmailsAutomaticos={setEmailsAutomaticos} tenants={tenants} tenantAtualId={tenantAtualId} perfilAtualNome={perfilAtualNome}/>;
     if (pagina==="relatorios")  return <Relatorios membros={membros} visitantes={visitantes} ministerios={ministerios} igrejas={igrejas} cargos={cargos} igrejaAtual={igrejaAtual} eventos={eventos} comunicados={comunicados} pedidosOracao={pedidosOracao}/>;
     return null;
   };
@@ -2394,6 +2424,12 @@ export default function App() {
         || membros.find(m=>m.status==="Ativo" && m.nome===u.nome);
       setMembroAtualId(alvo?.id || null);
     }
+    const tenantUser = tenants.find(t=>t.id===(u.tenantId ?? 1));
+    if((u.perfil||"")!=="Master" && tenantUser && tenantUser.status!=="Ativo"){
+      setLoginError("Conta da igreja inativa. Fale com o administrador da plataforma.");
+      setLoginLoading(false);
+      return;
+    }
     setAuthUserId(u.id);
     setLoginError("");
     setLoginLoading(false);
@@ -2436,6 +2472,7 @@ export default function App() {
     setSolicitacoesSenha(prev=>[...prev,{
       id:Date.now(),
       email:em,
+      tenantId: tenantAtualId ?? 1,
       data:new Date().toISOString().slice(0,10),
       status:"Pendente"
     }]);
@@ -2443,7 +2480,7 @@ export default function App() {
   };
 
   if(!usuarioLogado){
-    return <LoginScreen onLogin={doLogin} onLoginError={loginError} onRequestRegistration={requestRegistration} onRequestPasswordReset={requestPasswordReset} igrejas={igrejas} loading={loginLoading} />;
+    return <LoginScreen onLogin={doLogin} onLoginError={loginError} onRequestRegistration={requestRegistration} onRequestPasswordReset={requestPasswordReset} igrejas={igrejas} loading={loginLoading} logo={brandLogo} brandColor={brandColor} />;
   }
 
   return (
@@ -2451,7 +2488,7 @@ export default function App() {
 
       {/* MOBILE: Drawer lateral + Bottom Nav */}
       {isMobile && <>
-        <Drawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} igrejas={igrejas} igrejaAtual={igrejaAtual} setIgrejaAtual={setIgrejaAtual} pagina={pagina} nav={nav} allowedPages={allowedPages}/>
+        <Drawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} igrejas={igrejas} igrejaAtual={igrejaAtual} setIgrejaAtual={setIgrejaAtual} pagina={pagina} nav={nav} allowedPages={allowedPages} brandColor={brandColor} brandLogo={brandLogo}/>
         <div style={{ flex:1,display:"flex",flexDirection:"column",minWidth:0 }}>
           {/* Mobile Header */}
           <header style={{ background:"#fff",borderBottom:`1px solid ${C.border}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:20,boxShadow:"0 1px 6px rgba(40,30,10,0.07)" }}>
@@ -2480,7 +2517,7 @@ export default function App() {
 
       {/* DESKTOP: Sidebar fixa + conteúdo */}
       {!isMobile && <>
-        <Sidebar pagina={pagina} nav={nav} igrejas={igrejas} igrejaAtual={igrejaAtual} setIgrejaAtual={setIgrejaAtual} allowedPages={allowedPages}/>
+        <Sidebar pagina={pagina} nav={nav} igrejas={igrejas} igrejaAtual={igrejaAtual} setIgrejaAtual={setIgrejaAtual} allowedPages={allowedPages} brandColor={brandColor} brandLogo={brandLogo}/>
         <div style={{ flex:1,display:"flex",flexDirection:"column",minWidth:0 }}>
           <header style={{ background:"#fff",borderBottom:`1px solid ${C.border}`,padding:"11px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,boxShadow:"0 1px 4px rgba(40,30,10,0.06)" }}>
             <div style={{ fontSize:12,color:C.textLight }}>{PAGE_ICONS[pagina]} <span style={{ color:C.textMed,fontWeight:600 }}>{PAGE_LABELS[pagina]}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.oliva,fontWeight:600 }}>{perfilAtualNome==="Master" ? (tenantAtual?.nome || "Cliente") : igNome}</span><span style={{ margin:"0 8px",color:C.border }}>·</span><span style={{ color:C.textLight }}>{syncLabel}</span></div>
